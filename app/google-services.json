@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "637095626982",
+    "project_id": "cmu-especial-ee051",
+    "storage_bucket": "cmu-especial-ee051.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:637095626982:android:b3f524f9359ae4ac079327",
+        "android_client_info": {
+          "package_name": "com.example.cmu_especial"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmb6wRqN8kGbOWSEJgorh7mAVoRdYV--o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

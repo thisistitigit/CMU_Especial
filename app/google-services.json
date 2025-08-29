@@ -1,26 +1,44 @@
 {
   "project_info": {
-    "project_number": "637095626982",
-    "project_id": "cmu-especial-ee051",
-    "storage_bucket": "cmu-especial-ee051.firebasestorage.app"
+    "project_number": "751034936939",
+    "project_id": "reviewapp-375d4",
+    "storage_bucket": "reviewapp-375d4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:637095626982:android:b3f524f9359ae4ac079327",
+        "mobilesdk_app_id": "1:751034936939:android:7d51800a16935c5d7a8b2e",
         "android_client_info": {
-          "package_name": "com.example.cmu_especial"
+          "package_name": "com.example.reviewapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "751034936939-u6vcv7u6gtg1onpcdp0to2fhp342670i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.reviewapp",
+            "certificate_hash": "db935d082a2e2d7a3833652b57e87b84b5319003"
+          }
+        },
+        {
+          "client_id": "751034936939-9nni126p8cd6012semuo3r6qkt12vuk5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyDmb6wRqN8kGbOWSEJgorh7mAVoRdYV--o"
+          "current_key": "AIzaSyDEFxqnVpfzeT5zQban1K-td0Jcvz6-tVU"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "751034936939-9nni126p8cd6012semuo3r6qkt12vuk5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

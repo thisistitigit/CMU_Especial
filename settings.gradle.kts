@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CMU_Especial"
+rootProject.name = "ReviewApp"
 include(":app")
  

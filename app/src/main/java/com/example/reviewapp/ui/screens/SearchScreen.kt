@@ -1,5 +1,14 @@
 package com.example.reviewapp.ui.screens
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -9,16 +18,16 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.ui.components.PlaceListItem
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,10 +37,53 @@ fun SearchScreen(
     onOpenReview: (String) -> Unit,
     onOpenProfile: () -> Unit
 ) {
+    val context = LocalContext.current
+    val activity = context as Activity
     val state by vm.state.collectAsState()
 
-    // primeira carga: perto da localização atual
-    LaunchedEffect(Unit) { vm.refresh() }
+    // --- estado da permissão em runtime ---
+    var hasLocationPermission by remember { mutableStateOf(false) }
+    fun checkGranted(): Boolean {
+        val fine = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        return fine || coarse
+    }
+
+    // launcher para pedir permissões
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        hasLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (hasLocationPermission) {
+            vm.refresh() // arranca logo a pesquisa perto da posição atual
+        }
+    }
+
+    // primeira composição: se já tem permissão → refresh; senão → pedir
+    LaunchedEffect(Unit) {
+        hasLocationPermission = checkGranted()
+        if (hasLocationPermission) {
+            vm.refresh()
+        } else {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    // opção para re-pedir caso o utilizador negue uma vez
+    val showRationale =
+        !hasLocationPermission && ActivityCompat.shouldShowRequestPermissionRationale(
+            activity, Manifest.permission.ACCESS_FINE_LOCATION
+        )
 
     Scaffold(
         topBar = {
@@ -47,13 +99,46 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
 
+            // banner de rationale / atalho para definições se foi negado "para sempre"
+            if (!hasLocationPermission) {
+                PermissionBanner(
+                    showRationale = showRationale,
+                    onRequest = {
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
+                            )
+                        )
+                    },
+                    onOpenSettings = {
+                        val intent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null)
+                        )
+                        context.startActivity(intent)
+                    }
+                )
+            }
+
             // Mapa
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
+
+            // Ativa o "ponto azul" + botão "minha localização"
+            val mapProperties = remember(hasLocationPermission) {
+                MapProperties(isMyLocationEnabled = hasLocationPermission)
+            }
+            val uiSettings = remember {
+                MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false)
+            }
+
             GoogleMap(
                 modifier = Modifier.fillMaxWidth().height(260.dp),
-                cameraPositionState = cameraPositionState
+                cameraPositionState = cameraPositionState,
+                properties = mapProperties,
+                uiSettings = uiSettings
             ) {
                 state.places.forEach { p ->
                     Marker(
@@ -67,7 +152,7 @@ fun SearchScreen(
                 }
             }
 
-            // Botão para pesquisar no centro atual do mapa (usa nearby via refreshAt)
+            // Botão "Pesquisar nesta zona"
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -78,7 +163,8 @@ fun SearchScreen(
                     onClick = {
                         val center = cameraPositionState.position.target
                         vm.refreshAt(center, radiusMeters = 250)
-                    }
+                    },
+                    enabled = true // pode pesquisar mesmo sem permissão, usando o centro do mapa
                 ) { Text("Pesquisar nesta zona") }
             }
 
@@ -105,6 +191,35 @@ fun SearchScreen(
                         }
                         Divider()
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionBanner(
+    showRationale: Boolean,
+    onRequest: () -> Unit,
+    onOpenSettings: () -> Unit
+) {
+    Surface(tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text(
+                if (showRationale)
+                    "A app precisa da tua localização para centrar o mapa perto de ti."
+                else
+                    "Permissão de localização desativada. Concede acesso para centrar o mapa na tua posição."
+            )
+            Spacer(Modifier.height(8.dp))
+            Row {
+                if (showRationale) {
+                    Button(onClick = onRequest) { Text("Permitir localização") }
+                } else {
+                    // Negado “para sempre”: abrir Definições
+                    OutlinedButton(onClick = onOpenSettings) { Text("Abrir definições") }
+                    Spacer(Modifier.width(12.dp))
+                    TextButton(onClick = onRequest) { Text("Tentar novamente") }
                 }
             }
         }

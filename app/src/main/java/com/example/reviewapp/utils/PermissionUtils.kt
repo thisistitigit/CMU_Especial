@@ -1,5 +1,6 @@
 package com.example.reviewapp.utils
 
+import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
@@ -16,6 +17,15 @@ object PermissionUtils {
         } else {
             true
         }
+    }
+    fun hasLocationPermission(context: Context): Boolean {
+        val fine = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        return fine || coarse
     }
 
     fun requestNotificationPermission(activity: Activity, requestCode: Int) {

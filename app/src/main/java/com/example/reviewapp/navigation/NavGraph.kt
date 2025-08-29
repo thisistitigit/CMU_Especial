@@ -1,23 +1,25 @@
-// AppNavGraph.kt
 package com.example.reviewapp.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
-import androidx.navigation.compose.DialogNavigator
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import com.example.reviewapp.ui.screens.DetailsScreen
-import com.example.reviewapp.ui.screens.LoginScreen
-import com.example.reviewapp.ui.screens.ProfileScreen
-import com.example.reviewapp.ui.screens.RegisterScreen
-import com.example.reviewapp.ui.screens.ReviewFormScreen
-import com.example.reviewapp.ui.screens.SearchScreen
+import com.example.reviewapp.ui.components.BottomBar
+import com.example.reviewapp.ui.screens.*
 import com.example.reviewapp.viewmodels.AuthViewModel
+import androidx.navigation.NavHostController
 
 sealed class Route(val route: String) {
     data object AuthGate   : Route("authGate")
@@ -31,103 +33,125 @@ sealed class Route(val route: String) {
     data object History    : Route("history")
 }
 
+private val bottomRoutes = setOf(
+    Route.Search.route,
+    Route.Leaderboard.route,
+    Route.History.route,
+    Route.Profile.route
+)
+
 @Composable
 fun AppNavGraph(nav: NavHostController) {
-    NavHost(
-        navController = nav,
-        startDestination = Route.AuthGate.route
-    ) {
-        // Decide para onde ir consoante o estado de auth
-        composable(Route.AuthGate.route) {
-            val vm: AuthViewModel = hiltViewModel()
-            LaunchedEffect(Unit) {
-                val target = if (vm.isLoggedIn()) Route.Search.route else Route.Login.route
-                nav.navigate(target) {
-                    // limpa tudo até ao startDestination (authGate) e remove-o também
-                    popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
-                    launchSingleTop = true
+    val backStackEntry by nav.currentBackStackEntryAsState()
+    val currentDest = backStackEntry?.destination
+    val currentRoute = currentDest?.route
+    val showBottom = currentRoute in bottomRoutes
+
+    Scaffold(
+        bottomBar = { if (showBottom) BottomBar(nav, currentDest) }
+    ) { innerPadding ->
+        NavHost(
+            navController = nav,
+            startDestination = Route.AuthGate.route,
+            modifier = Modifier.padding(innerPadding)
+        )  {
+            // Gate decide login ou home
+            composable(Route.AuthGate.route) {
+                val vm: AuthViewModel = hiltViewModel()
+                LaunchedEffect(Unit) {
+                    val target = if (vm.isLoggedIn()) Route.Search.route else Route.Login.route
+                    nav.navigate(target) {
+                        popUpTo(Route.AuthGate.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("A preparar…")
                 }
             }
-            // (opcional) pequeno placeholder visual enquanto navega
-        }
 
-        composable(Route.Login.route) {
-            LoginScreen(
-                onLoginSuccess = {
-                    nav.navigate(Route.Search.route) {
-                        popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
-                        launchSingleTop = true
+            // Auth
+            composable(Route.Login.route) {
+                LoginScreen(
+                    onLoginSuccess = {
+                        nav.navigate(Route.Search.route) {
+                            popUpTo(Route.Login.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onGoRegister = { nav.navigate(Route.Register.route) }
+                )
+            }
+            composable(Route.Register.route) {
+                RegisterScreen(
+                    onRegisterSuccess = {
+                        nav.navigate(Route.Search.route) {
+                            popUpTo(Route.Register.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onGoLogin = { nav.popBackStack() }
+                )
+            }
+
+            // Tabs (mostram bottom bar)
+            composable(Route.Search.route) {
+                SearchScreen(
+                    onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
+                    onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
+                    onOpenProfile = { nav.navigate(Route.Profile.route) }
+                )
+            }
+            composable(Route.Leaderboard.route) {
+                // TODO: substitui pelo teu ecrã real
+                PlaceholderScreen("Top locais (Leaderboard)")
+            }
+            composable(Route.History.route) {
+                // TODO: substitui pelo teu ecrã real
+                PlaceholderScreen("O meu histórico")
+            }
+            composable(Route.Profile.route) {
+                ProfileScreen(
+                    onLogout = {
+                        nav.navigate(Route.Login.route) {
+                            popUpTo(Route.Search.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
-                },
-                onGoRegister = { nav.navigate(Route.Register.route) }
-            )
-        }
+                )
+            }
 
-        composable(Route.Register.route) {
-            RegisterScreen(
-                onRegisterSuccess = {
-                    nav.navigate(Route.Search.route) {
-                        popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                },
-                onGoLogin = {
-                    // voltar ao ecrã anterior sem duplicar rotas
-                    nav.popBackStack()
-                }
-            )
+            // Sem bottom bar
+            composable(
+                route = Route.Details.route,
+                arguments = listOf(navArgument("placeId") { type = NavType.StringType })
+            ) { back ->
+                val placeId = back.arguments?.getString("placeId").orEmpty()
+                DetailsScreen(
+                    placeId = placeId,
+                    onBack  = { nav.popBackStack() },
+                    onReview= { nav.navigate(Route.ReviewForm.build(placeId)) }
+                )
+            }
+            composable(
+                route = Route.ReviewForm.route,
+                arguments = listOf(navArgument("placeId") { type = NavType.StringType })
+            ) { back ->
+                val placeId = back.arguments?.getString("placeId").orEmpty()
+                ReviewFormScreen(
+                    placeId = placeId,
+                    onDone  = { nav.popBackStack() },
+                    onCancel= { nav.popBackStack() }
+                )
+            }
         }
+    }
+}
 
-        // HOME / SEARCH (existe agora no grafo)
-        composable(Route.Search.route) {
-            // Adapta as lambdas aos parâmetros reais do teu SearchScreen
-            SearchScreen(
-                onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
-                onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
-                onOpenProfile = { nav.navigate(Route.Profile.route) }
-            )
-        }
-
-        // DETAILS com argumento obrigatório placeId
-        composable(
-            route = Route.Details.route,
-            arguments = listOf(navArgument("placeId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val placeId = backStackEntry.arguments?.getString("placeId").orEmpty()
-            DetailsScreen(
-                placeId = placeId,
-                onBack  = { nav.popBackStack() },
-                onReview= { nav.navigate(Route.ReviewForm.build(placeId)) }
-            )
-        }
-
-        // REVIEW FORM com argumento obrigatório placeId
-        composable(
-            route = Route.ReviewForm.route,
-            arguments = listOf(navArgument("placeId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val placeId = backStackEntry.arguments?.getString("placeId").orEmpty()
-            ReviewFormScreen(
-                placeId = placeId,
-                onDone  = { nav.popBackStack() },   // volta ao detalhe ou search
-                onCancel= { nav.popBackStack() }
-            )
-        }
-
-        // PROFILE com logout a limpar o back stack
-        composable(Route.Profile.route) {
-            ProfileScreen(
-                onLogout = {
-                    nav.navigate(Route.Login.route) {
-                        popUpTo(nav.graph.findStartDestination().id) { inclusive = true }
-                        launchSingleTop = true
-                    }
-                }
-            )
-        }
-
-        // Se precisares, ativa quando tiveres os ecrãs
-        // composable(Route.Leaderboard.route) { LeaderboardScreen() }
-        // composable(Route.History.route)    { HistoryScreen() }
+/** Placeholder simples para Leaderboard/History enquanto não tens os ecrãs reais */
+@Composable
+private fun PlaceholderScreen(text: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text(text)
     }
 }

@@ -101,6 +101,11 @@
     <string name="home_sort_rating">Pontuação</string>
     <string name="home_sort_distance">Distância</string>
     <string name="home_explore_map">Explorar no mapa</string>
+    <string name="home_suggestions_title">Sugestões perto de si</string>
+    <string name="home_see_more">Ver mais</string>
+    <string name="home_nearby_title">Perto de si</string>
+    <string name="home_search_results_title">Resultados da pesquisa</string>
+
 
     <!-- Search (Explorar) -->
     <string name="search_title">Explorar</string>

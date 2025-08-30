@@ -142,11 +142,11 @@ fun SearchScreen(
             )
         },
         floatingActionButton = {
-            // Só recentra se o utilizador pedir explicitamente
-            FloatingActionButton(onClick = { if (perm.isGranted) vm.refresh() else perm.ask() }) {
+            FloatingActionButton(onClick = { if (perm.isGranted) vm.refreshNearMe() else perm.ask() }) {
                 Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
             }
         }
+
     ) { padding ->
         Column(Modifier.padding(padding)) {
 

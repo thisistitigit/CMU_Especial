@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +33,7 @@ private enum class HomeSort { Rating }
 fun HomeScreen(
     vm: SearchViewModel = hiltViewModel(),
     onOpenDetails: (String) -> Unit,
-    onOpenReview: (String) -> Unit, // mantido caso uses noutro lado
+    onOpenReview: (String) -> Unit,
     onOpenProfile: () -> Unit
 ) {
     val ui by vm.state.collectAsState()
@@ -40,8 +41,17 @@ fun HomeScreen(
 
     var query by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
+    var showingSearch by remember { mutableStateOf(false) }   // << controla que secção mostrar
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
+
+    // mantém “perto de mim” atualizado ao entrar
+    LaunchedEffect(Unit) { vm.refreshNearMe() }
+
+    // se o utilizador limpar o texto, voltamos às sugestões
+    LaunchedEffect(query, isSearching) {
+        if (query.isBlank() && !isSearching) showingSearch = false
+    }
 
     Scaffold(
         topBar = {
@@ -53,6 +63,13 @@ fun HomeScreen(
                         singleLine = true,
                         placeholder = { Text(stringResource(R.string.search_location_hint)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        trailingIcon = {
+                            if (query.isNotBlank()) {
+                                IconButton(onClick = { query = ""; showingSearch = false }) {
+                                    Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.action_clear))
+                                }
+                            }
+                        },
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
                         keyboardActions = KeyboardActions(
                             onSearch = {
@@ -61,7 +78,10 @@ fun HomeScreen(
                                     isSearching = true
                                     val latLng = geocodeFirstLatLng(ctx, query)
                                     isSearching = false
-                                    latLng?.let { vm.refreshAt(it) }
+                                    if (latLng != null) {
+                                        vm.refreshAt(latLng)
+                                        showingSearch = true         // << ativa resultados no lugar das sugestões
+                                    }
                                 }
                             }
                         ),
@@ -96,41 +116,49 @@ fun HomeScreen(
                 }
             }
 
-            when {
-                ui.isLoading && ui.places.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+            // erro “totalmente vazio”
+            if (ui.error != null && ui.places.isEmpty() && ui.nearMePlaces.isEmpty()) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.home_error))
                 }
-                ui.error != null -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.home_error))
-                    }
-                }
-                ui.places.isEmpty() -> {
+                return@Column
+            }
+
+            // listas ordenadas
+            val nearOrdered = ui.nearMePlaces.sortedByDescending { it.avgRating }
+            val searchOrdered = ui.places.sortedByDescending { it.avgRating }
+
+            if (showingSearch) {
+                // ---- MOSTRAR APENAS RESULTADOS DA PESQUISA ----
+                if (searchOrdered.isNotEmpty()) {
+                    PlaceHorizontalSection(
+                        title = stringResource(R.string.home_search_results_title),
+                        places = searchOrdered.take(30),
+                        onPlaceClick = onOpenDetails,
+                        showSeeMore = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else {
+                    // se não há resultados, mostra placeholder de vazio
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(stringResource(R.string.home_empty))
                     }
                 }
-                else -> {
-                    val ordered = when (sort) {
-                        HomeSort.Rating -> ui.places.sortedByDescending { it.avgRating }
-                    }
-
-                    val showingSuggestions = query.isBlank() && !isSearching
-                    val title = if (showingSuggestions)
-                        stringResource(R.string.home_suggestions_title)
-                    else
-                        stringResource(R.string.home_search_results_title)
-
+            } else {
+                // ---- MOSTRAR APENAS “PERTO DE SI” ----
+                if (nearOrdered.isNotEmpty()) {
                     PlaceHorizontalSection(
-                        title = title,
-                        places = ordered.take(30), // limita para não pesar a UI
+                        title = stringResource(R.string.home_suggestions_title),
+                        places = nearOrdered.take(30),
                         onPlaceClick = onOpenDetails,
-                        showSeeMore = showingSuggestions,
-                        onSeeMoreClick = { /* TODO: navegar para ecrã Top/Lista completa se quiseres */ },
+                        showSeeMore = true,
+                        onSeeMoreClick = { /* TODO: navegar para lista completa */ },
                         modifier = Modifier.fillMaxWidth()
                     )
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(stringResource(R.string.home_empty))
+                    }
                 }
             }
         }

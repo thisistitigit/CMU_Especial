@@ -105,6 +105,7 @@
     <string name="home_see_more">Ver mais</string>
     <string name="home_nearby_title">Perto de si</string>
     <string name="home_search_results_title">Resultados da pesquisa</string>
+    <string name="action_clear">Limpar</string>
 
 
     <!-- Search (Explorar) -->

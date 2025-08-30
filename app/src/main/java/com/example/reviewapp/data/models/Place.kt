@@ -9,5 +9,7 @@ data class Place(
     val lng: Double,
     val address: String?,
     val avgRating: Double = 0.0,
-    val ratingsCount: Int = 0
+    val ratingsCount: Int = 0,
+    val internalAvgRating: Double = 0.0,
+    val internalRatingsCount: Int = 0,
 )

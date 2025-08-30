@@ -1,3 +1,4 @@
+// com/example/reviewapp/navigation/AppNavGraph.kt
 package com.example.reviewapp.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,8 @@ import com.example.reviewapp.ui.components.BottomBar
 import com.example.reviewapp.ui.screens.*
 import com.example.reviewapp.viewmodels.AuthViewModel
 import androidx.navigation.NavHostController
+import androidx.compose.ui.res.stringResource
+import com.example.reviewapp.R
 
 sealed class Route(val route: String) {
     data object AuthGate   : Route("authGate")
@@ -35,12 +38,12 @@ sealed class Route(val route: String) {
 }
 
 private val bottomRoutes = setOf(
+    Route.Home.route,         // ⟵ voltar a mostrar no Home
     Route.Search.route,
     Route.Leaderboard.route,
     Route.History.route,
     Route.Profile.route
 )
-
 
 @Composable
 fun AppNavGraph(nav: NavHostController) {
@@ -60,7 +63,6 @@ fun AppNavGraph(nav: NavHostController) {
             composable(Route.AuthGate.route) {
                 val vm: AuthViewModel = hiltViewModel()
                 LaunchedEffect(Unit) {
-                    // pós-login: ir para Home (não para Search)
                     val target = if (vm.isLoggedIn()) Route.Home.route else Route.Login.route
                     nav.navigate(target) {
                         popUpTo(Route.AuthGate.route) { inclusive = true }
@@ -68,7 +70,7 @@ fun AppNavGraph(nav: NavHostController) {
                     }
                 }
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("A preparar…")
+                    Text(stringResource(R.string.authgate_preparing))
                 }
             }
 
@@ -76,7 +78,7 @@ fun AppNavGraph(nav: NavHostController) {
             composable(Route.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        nav.navigate(Route.Home.route) { // ⟵ Home
+                        nav.navigate(Route.Home.route) {
                             popUpTo(Route.Login.route) { inclusive = true }
                             launchSingleTop = true
                         }
@@ -87,7 +89,7 @@ fun AppNavGraph(nav: NavHostController) {
             composable(Route.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        nav.navigate(Route.Home.route) { // ⟵ Home
+                        nav.navigate(Route.Home.route) {
                             popUpTo(Route.Register.route) { inclusive = true }
                             launchSingleTop = true
                         }
@@ -98,7 +100,6 @@ fun AppNavGraph(nav: NavHostController) {
 
             // Tabs (com bottom bar)
             composable(Route.Home.route) {
-                // usa a HomeScreen que criámos antes
                 HomeScreen(
                     onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
                     onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
@@ -106,15 +107,14 @@ fun AppNavGraph(nav: NavHostController) {
                 )
             }
             composable(Route.Search.route) {
-                // Search agora é só o Mapa (o teu SearchScreen atual já serve)
                 SearchScreen(
                     onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
                     onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
                     onOpenProfile = { nav.navigate(Route.Profile.route) }
                 )
             }
-            composable(Route.Leaderboard.route) { PlaceholderScreen("Top locais (Leaderboard)") }
-            composable(Route.History.route)     { PlaceholderScreen("O meu histórico") }
+            composable(Route.Leaderboard.route) { PlaceholderScreen(stringResource(R.string.placeholder_leaderboard)) }
+            composable(Route.History.route)     { PlaceholderScreen(stringResource(R.string.placeholder_history)) }
             composable(Route.Profile.route) {
                 ProfileScreen(
                     onLogout = {
@@ -152,7 +152,7 @@ fun AppNavGraph(nav: NavHostController) {
         }
     }
 }
-/** Placeholder simples para Leaderboard/History enquanto não tens os ecrãs reais */
+
 @Composable
 private fun PlaceholderScreen(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

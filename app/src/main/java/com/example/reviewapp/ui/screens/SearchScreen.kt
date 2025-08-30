@@ -1,3 +1,4 @@
+// com/example/reviewapp/ui/screens/SearchScreen.kt
 package com.example.reviewapp.ui.screens
 
 import android.Manifest
@@ -5,7 +6,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,15 +14,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.PlaceListItem
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.model.CameraPosition
@@ -41,35 +43,29 @@ fun SearchScreen(
     val activity = context as Activity
     val state by vm.state.collectAsState()
 
-    // --- estado da permissão em runtime ---
+    // === Permissões de localização (portadas do Home) ===
     var hasLocationPermission by remember { mutableStateOf(false) }
     fun checkGranted(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        val coarse = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
+        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
     }
 
-    // launcher para pedir permissões
     val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
-        hasLocationPermission = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (hasLocationPermission) {
-            vm.refresh() // arranca logo a pesquisa perto da posição atual
-        }
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { res ->
+        hasLocationPermission =
+            res[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+                    res[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        if (hasLocationPermission) vm.refresh()
     }
 
-    // primeira composição: se já tem permissão → refresh; senão → pedir
+    val showRationale = !hasLocationPermission &&
+            ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)
+
     LaunchedEffect(Unit) {
         hasLocationPermission = checkGranted()
-        if (hasLocationPermission) {
-            vm.refresh()
-        } else {
+        if (hasLocationPermission) vm.refresh() else {
             permissionLauncher.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -79,27 +75,28 @@ fun SearchScreen(
         }
     }
 
-    // opção para re-pedir caso o utilizador negue uma vez
-    val showRationale =
-        !hasLocationPermission && ActivityCompat.shouldShowRequestPermissionRationale(
-            activity, Manifest.permission.ACCESS_FINE_LOCATION
-        )
-
+    // === UI ===
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Pastelarias & Doçaria") },
+                title = { Text(stringResource(R.string.search_title)) },
                 actions = {
                     IconButton(onClick = onOpenProfile) {
-                        Icon(Icons.Filled.AccountCircle, contentDescription = "Perfil")
+                        Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.search_profile_cd))
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            // FAB "Minha localização" — chama vm.refresh() (usa posição atual)
+            FloatingActionButton(onClick = { vm.refresh() }) {
+                Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
+            }
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {
 
-            // banner de rationale / atalho para definições se foi negado "para sempre"
+            // Banner de permissão (rationale / abrir definições)
             if (!hasLocationPermission) {
                 PermissionBanner(
                     showRationale = showRationale,
@@ -121,12 +118,10 @@ fun SearchScreen(
                 )
             }
 
-            // Mapa
+            // === Mapa ===
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
-
-            // Ativa o "ponto azul" + botão "minha localização"
             val mapProperties = remember(hasLocationPermission) {
                 MapProperties(isMyLocationEnabled = hasLocationPermission)
             }
@@ -135,7 +130,9 @@ fun SearchScreen(
             }
 
             GoogleMap(
-                modifier = Modifier.fillMaxWidth().height(260.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp),
                 cameraPositionState = cameraPositionState,
                 properties = mapProperties,
                 uiSettings = uiSettings
@@ -163,9 +160,8 @@ fun SearchScreen(
                     onClick = {
                         val center = cameraPositionState.position.target
                         vm.refreshAt(center, radiusMeters = 250)
-                    },
-                    enabled = true // pode pesquisar mesmo sem permissão, usando o centro do mapa
-                ) { Text("Pesquisar nesta zona") }
+                    }
+                ) { Text(stringResource(R.string.search_in_this_area)) }
             }
 
             // Lista ordenada por pontuação
@@ -180,13 +176,11 @@ fun SearchScreen(
                             horizontalArrangement = Arrangement.Start
                         ) {
                             TextButton(onClick = { onOpenDetails(p.id) }) {
-                                Text("Detalhes")
+                                Text(stringResource(R.string.action_details))
                             }
                             Spacer(Modifier.width(12.dp))
                             TextButton(onClick = { onOpenReview(p.id) }) {
-                                Icon(Icons.Filled.Star, contentDescription = null)
-                                Spacer(Modifier.width(6.dp))
-                                Text("Avaliar")
+                                Text(stringResource(R.string.action_review))
                             }
                         }
                         Divider()
@@ -206,20 +200,19 @@ private fun PermissionBanner(
     Surface(tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                if (showRationale)
-                    "A app precisa da tua localização para centrar o mapa perto de ti."
+                text = if (showRationale)
+                    stringResource(R.string.perm_rationale)
                 else
-                    "Permissão de localização desativada. Concede acesso para centrar o mapa na tua posição."
+                    stringResource(R.string.perm_denied_permanent)
             )
             Spacer(Modifier.height(8.dp))
             Row {
                 if (showRationale) {
-                    Button(onClick = onRequest) { Text("Permitir localização") }
+                    Button(onClick = onRequest) { Text(stringResource(R.string.action_allow_location)) }
                 } else {
-                    // Negado “para sempre”: abrir Definições
-                    OutlinedButton(onClick = onOpenSettings) { Text("Abrir definições") }
+                    OutlinedButton(onClick = onOpenSettings) { Text(stringResource(R.string.action_open_settings)) }
                     Spacer(Modifier.width(12.dp))
-                    TextButton(onClick = onRequest) { Text("Tentar novamente") }
+                    TextButton(onClick = onRequest) { Text(stringResource(R.string.action_try_again)) }
                 }
             }
         }

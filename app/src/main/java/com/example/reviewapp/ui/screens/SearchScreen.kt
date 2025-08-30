@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.PlaceListItem
 import com.example.reviewapp.viewmodels.SearchViewModel
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
@@ -120,8 +121,19 @@ fun SearchScreen(
 
             // === Mapa ===
             val cameraPositionState = rememberCameraPositionState {
+                // valor inicial (Lisboa ou o que vier do VM no arranque)
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
+
+// ANIMAÇÃO: sempre que o VM mudar o centro, voar a câmara para lá
+            LaunchedEffect(state.cameraLatLng) {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f)
+                )
+            }
+
+            var mapLoaded by remember { mutableStateOf(false) }
+
             val mapProperties = remember(hasLocationPermission) {
                 MapProperties(isMyLocationEnabled = hasLocationPermission)
             }
@@ -135,7 +147,8 @@ fun SearchScreen(
                     .height(260.dp),
                 cameraPositionState = cameraPositionState,
                 properties = mapProperties,
-                uiSettings = uiSettings
+                uiSettings = uiSettings,
+                onMapLoaded = { mapLoaded = true } // opcional, só para debug/telemetria
             ) {
                 state.places.forEach { p ->
                     Marker(
@@ -148,7 +161,6 @@ fun SearchScreen(
                     )
                 }
             }
-
             // Botão "Pesquisar nesta zona"
             Row(
                 Modifier

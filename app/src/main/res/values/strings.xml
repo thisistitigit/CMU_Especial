@@ -83,7 +83,7 @@
 
 
     <!-- Títulos / Ações comuns -->
-    <string name="app_title">Pastelarias &amp; Doçaria</string>
+    <string name="app_title">BITE</string>
     <string name="action_details">Detalhes</string>
     <string name="action_review">Avaliar</string>
     <string name="action_try_again">Tentar novamente</string>
@@ -91,14 +91,27 @@
     <string name="action_allow_location">Permitir localização</string>
     <string name="action_my_location">Minha localização</string>
 
+
     <!-- Home -->
     <string name="home_title">Pastelarias &amp; Doçaria</string>
-    <string name="home_empty_loading">A carregar…</string>
+    <string name="home_empty">Ainda não há resultados por aqui.</string>
+    <string name="home_loading">A carregar…</string>
+    <string name="home_error">Falha ao carregar. Tenta novamente.</string>
+    <string name="home_sort_label">Ordenar por</string>
+    <string name="home_sort_rating">Pontuação</string>
+    <string name="home_sort_distance">Distância</string>
+    <string name="home_explore_map">Explorar no mapa</string>
 
     <!-- Search (Explorar) -->
     <string name="search_title">Explorar</string>
     <string name="search_profile_cd">Perfil</string>
     <string name="search_in_this_area">Pesquisar nesta zona</string>
+    <!-- Raio de pesquisa -->
+    <string name="radius_label">Raio</string>
+    <string name="radius_250m">250 m</string>
+    <string name="radius_1km">1 km</string>
+    <string name="radius_3km">3 km</string>
+    <string name="radius_5km">5 km</string>
 
     <!-- Permissões de localização (banner) -->
     <string name="perm_rationale">A app precisa da tua localização para centrar o mapa perto de ti.</string>

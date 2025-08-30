@@ -1,3 +1,4 @@
+// com/example/reviewapp/viewmodels/SearchViewModel.kt
 package com.example.reviewapp.viewmodels
 
 import android.Manifest
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlin.math.*
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -32,7 +34,10 @@ class SearchViewModel @Inject constructor(
 
     data class UiState(
         val cameraLatLng: LatLng = LatLng(38.7223, -9.1393), // Lisboa por defeito
-        val places: List<Place> = emptyList(),
+        val searchCenter: LatLng = LatLng(38.7223, -9.1393),
+        val radiusMeters: Int = 3000,           // RAIO ATUAL (UI)
+        val fetchedRadiusMeters: Int = 0,       // último raio usado em fetch
+        val places: List<Place> = emptyList(),  // filtrado por radiusMeters
         val isLoading: Boolean = false,
         val error: String? = null
     )
@@ -40,110 +45,108 @@ class SearchViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState(isLoading = true))
     val state: StateFlow<UiState> = _state
 
+    // Mantemos o "resultado bruto" do último fetch para poder encolher o raio sem novo request
+    private var rawPlaces: List<Place> = emptyList()
+
     init {
-        // Primeiro carregamento: tenta localização atual, senão faz fallback para o centro por defeito
-        viewModelScope.launch {
-            preload()
-        }
+        viewModelScope.launch { preload() }
     }
 
-    private suspend fun preload(radiusMeters: Int = 250) {
-        logD("VM.preload - start")
-        _state.update { it.copy(isLoading = true, error = null) }
+    private fun haversineMeters(a: LatLng, b: LatLng): Double {
+        val R = 6371000.0
+        val dLat = Math.toRadians(b.latitude - a.latitude)
+        val dLng = Math.toRadians(b.longitude - a.longitude)
+        val la1 = Math.toRadians(a.latitude)
+        val la2 = Math.toRadians(b.latitude)
+        val h = sin(dLat/2).pow(2) + cos(la1) * cos(la2) * sin(dLng/2).pow(2)
+        return 2 * R * asin(min(1.0, sqrt(h)))
+    }
 
+    private fun applyLocalRadiusFilter(center: LatLng, radius: Int, list: List<Place>): List<Place> {
+        return list.filter { p ->
+            haversineMeters(center, LatLng(p.lat, p.lng)) <= radius
+        }.sortedByDescending { it.avgRating }
+    }
+
+    private suspend fun doFetch(center: LatLng, radiusMeters: Int) {
+        _state.update { it.copy(isLoading = true, error = null) }
+        val list = runCatching {
+            placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
+        }.onFailure { logE("VM.fetch fail: ${it.message}", it) }
+            .getOrElse { emptyList() }
+
+        rawPlaces = list
+        _state.update {
+            it.copy(
+                cameraLatLng = center,
+                searchCenter = center,
+                fetchedRadiusMeters = radiusMeters,
+                places = applyLocalRadiusFilter(center, it.radiusMeters, rawPlaces),
+                isLoading = false,
+                error = null
+            )
+        }
+        logD("VM.fetch OK center=$center r=$radiusMeters raw=${rawPlaces.size} shown=${_state.value.places.size}")
+    }
+
+    private suspend fun preload() {
+        logD("VM.preload - start")
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
         if (fineGranted || coarseGranted) {
-            // Temos permissão — tenta posição atual
             try {
-                // tenta localização atual; se vier null, tenta lastLocation
                 val token = CancellationTokenSource().token
-                val loc = try {
-                    locationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token).await()
-                } catch (_: Throwable) { null }
-
+                val loc = try { locationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token).await() } catch (_: Throwable) { null }
                 val best = loc ?: try { locationProvider.lastLocation.await() } catch (_: Throwable) { null }
-
                 if (best != null) {
-                    val lat = best.latitude
-                    val lng = best.longitude
-                    val list = placeRepo.nearby(lat, lng, radiusMeters)
-                    _state.update {
-                        it.copy(
-                            cameraLatLng = LatLng(lat, lng),
-                            places = list,
-                            isLoading = false,
-                            error = null
-                        )
-                    }
-                    logD("VM - using ${if (loc!=null) "currentLocation" else "lastLocation"} ($lat,$lng) -> ${list.size} places")
-                    return
+                    val center = LatLng(best.latitude, best.longitude)
+                    return doFetch(center, _state.value.radiusMeters)
                 }
             } catch (t: Throwable) {
-                logE("VM.preload - using current location failed: ${t.message}", t)
+                logE("VM.preload location fail: ${t.message}", t)
             }
         }
 
-        // Sem permissão ou falhou localização → fallback para o centro por defeito
-        try {
-            val center = _state.value.cameraLatLng
-            val list = placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
-            _state.update { it.copy(places = list, isLoading = false, error = null) }
-            logD("VM.preload - fallback with default center (${center.latitude},${center.longitude}) -> ${list.size} places")
-        } catch (t: Throwable) {
-            logE("VM.preload - fallback failed: ${t.message}", t)
-            _state.update { it.copy(isLoading = false, error = t.message ?: "unknown") }
+        // fallback default center
+        val center = _state.value.cameraLatLng
+        doFetch(center, _state.value.radiusMeters)
+    }
+
+    /** Atualiza o RAIO. Se aumentar para além do último fetch, faz novo fetch; se diminuir, filtra localmente. */
+    fun setRadiusMeters(newRadius: Int) = viewModelScope.launch {
+        val st = _state.value
+        _state.update { it.copy(radiusMeters = newRadius) }
+
+        if (newRadius > st.fetchedRadiusMeters) {
+            // precisamos de expandir a área → fetch ao repositório
+            doFetch(st.searchCenter, newRadius)
+        } else {
+            // apenas encolher → filtra localmente
+            _state.update {
+                it.copy(places = applyLocalRadiusFilter(it.searchCenter, newRadius, rawPlaces))
+            }
         }
     }
 
     /** Pesquisa perto da localização atual do dispositivo (requer permissão). */
-    fun refresh(radiusMeters: Int = 250) = viewModelScope.launch {
-        logD("VM.refresh(r=$radiusMeters) - checking permissions")
+    fun refresh(radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
+        logD("VM.refresh(r=$radiusMeters)")
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        if (!fineGranted && !coarseGranted) {
-            logD("VM.refresh - NO PERMISSION, abort")
-            return@launch
-        }
+        if (!fineGranted && !coarseGranted) return@launch
 
-        _state.update { it.copy(isLoading = true, error = null) }
-        try {
-            val token = CancellationTokenSource().token
-            val loc = locationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token).await()
-            if (loc == null) {
-                _state.update { it.copy(isLoading = false) }
-                return@launch
-            }
-            val list = placeRepo.nearby(loc.latitude, loc.longitude, radiusMeters)
-            _state.update {
-                it.copy(
-                    cameraLatLng = LatLng(loc.latitude, loc.longitude),
-                    places = list,
-                    isLoading = false,
-                    error = null
-                )
-            }
-            logD("VM.refresh - repo returned ${list.size} places")
-        } catch (se: SecurityException) {
-            logE("VM.refresh - SecurityException ${se.message}", se)
-            _state.update { it.copy(isLoading = false, error = se.message) }
-        } catch (t: Throwable) {
-            logE("VM.refresh - FAILED: ${t.message}", t)
-            _state.update { it.copy(isLoading = false, error = t.message) }
-        }
+        val token = CancellationTokenSource().token
+        val loc = runCatching { locationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token).await() }.getOrNull()
+        val best = loc ?: runCatching { locationProvider.lastLocation.await() }.getOrNull()
+        if (best == null) return@launch
+
+        doFetch(LatLng(best.latitude, best.longitude), radiusMeters)
     }
 
-    fun refreshAt(center: LatLng, radiusMeters: Int = 250) = viewModelScope.launch {
+    /** Pesquisa na área do mapa (centro atual). */
+    fun refreshAt(center: LatLng, radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
         logD("VM.refreshAt(center=${center.latitude},${center.longitude}, r=$radiusMeters)")
-        _state.update { it.copy(isLoading = true, error = null) }
-        try {
-            val list = placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
-            _state.update { it.copy(cameraLatLng = center, places = list, isLoading = false, error = null) }
-            logD("VM.refreshAt - repo returned ${list.size} places")
-        } catch (t: Throwable) {
-            logE("VM.refreshAt - FAILED: ${t.message}", t)
-            _state.update { it.copy(isLoading = false, error = t.message) }
-        }
+        doFetch(center, radiusMeters)
     }
 }

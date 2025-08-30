@@ -1,14 +1,7 @@
 // com/example/reviewapp/ui/screens/SearchScreen.kt
+// com/example/reviewapp/ui/screens/SearchScreen.kt
 package com.example.reviewapp.ui.screens
 
-import android.Manifest
-import android.app.Activity
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,15 +10,15 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.PermissionBanner
 import com.example.reviewapp.ui.components.PlaceListItem
+import com.example.reviewapp.utils.rememberLocationPermissionState
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -40,43 +33,11 @@ fun SearchScreen(
     onOpenReview: (String) -> Unit,
     onOpenProfile: () -> Unit
 ) {
-    val context = LocalContext.current
-    val activity = context as Activity
     val state by vm.state.collectAsState()
 
-    // === Permissões de localização (portadas do Home) ===
-    var hasLocationPermission by remember { mutableStateOf(false) }
-    fun checkGranted(): Boolean {
-        val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-        return fine || coarse
-    }
+    // ⟵ encapsulado num helper reutilizável
+    val perm = rememberLocationPermissionState(onGranted = { vm.refresh() })
 
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { res ->
-        hasLocationPermission =
-            res[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                    res[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        if (hasLocationPermission) vm.refresh()
-    }
-
-    val showRationale = !hasLocationPermission &&
-            ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION)
-
-    LaunchedEffect(Unit) {
-        hasLocationPermission = checkGranted()
-        if (hasLocationPermission) vm.refresh() else {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                )
-            )
-        }
-    }
-
-    // === UI ===
     Scaffold(
         topBar = {
             TopAppBar(
@@ -89,111 +50,92 @@ fun SearchScreen(
             )
         },
         floatingActionButton = {
-            // FAB "Minha localização" — chama vm.refresh() (usa posição atual)
-            FloatingActionButton(onClick = { vm.refresh() }) {
+            FloatingActionButton(onClick = {
+                if (perm.isGranted) vm.refresh() else perm.ask()
+            }) {
                 Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
             }
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {
 
-            // Banner de permissão (rationale / abrir definições)
-            if (!hasLocationPermission) {
+            if (!perm.isGranted) {
                 PermissionBanner(
-                    showRationale = showRationale,
-                    onRequest = {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
-                            )
-                        )
-                    },
-                    onOpenSettings = {
-                        val intent = Intent(
-                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", context.packageName, null)
-                        )
-                        context.startActivity(intent)
-                    }
+                    showRationale = perm.showRationale,
+                    onRequest = perm.ask,
+                    onOpenSettings = perm.openSettings
                 )
             }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.radius_label), style = MaterialTheme.typography.labelLarge)
+                Spacer(Modifier.width(12.dp))
+                RadiusChip(label = stringResource(R.string.radius_250m), value = 250,  current = state.radiusMeters) { vm.setRadiusMeters(it) }
+                Spacer(Modifier.width(8.dp))
+                RadiusChip(label = stringResource(R.string.radius_1km),  value = 1000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
+                Spacer(Modifier.width(8.dp))
+                RadiusChip(label = stringResource(R.string.radius_3km),  value = 3000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
+                Spacer(Modifier.width(8.dp))
+                RadiusChip(label = stringResource(R.string.radius_5km),  value = 5000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
+            }
+            // ===== Raio (chips) — igual ao que já tinhas =====
+            // ... RadiusChip row aqui ...
 
-            // === Mapa ===
+            // ===== Mapa =====
             val cameraPositionState = rememberCameraPositionState {
-                // valor inicial (Lisboa ou o que vier do VM no arranque)
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
-
-// ANIMAÇÃO: sempre que o VM mudar o centro, voar a câmara para lá
             LaunchedEffect(state.cameraLatLng) {
-                cameraPositionState.animate(
-                    CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f)
-                )
+                cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f))
             }
-
-            var mapLoaded by remember { mutableStateOf(false) }
-
-            val mapProperties = remember(hasLocationPermission) {
-                MapProperties(isMyLocationEnabled = hasLocationPermission)
+            val mapProps = remember(perm.isGranted) {
+                MapProperties(isMyLocationEnabled = perm.isGranted)
             }
             val uiSettings = remember {
                 MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false)
             }
 
             GoogleMap(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(260.dp),
+                modifier = Modifier.fillMaxWidth().height(260.dp),
                 cameraPositionState = cameraPositionState,
-                properties = mapProperties,
-                uiSettings = uiSettings,
-                onMapLoaded = { mapLoaded = true } // opcional, só para debug/telemetria
+                properties = mapProps,
+                uiSettings = uiSettings
             ) {
                 state.places.forEach { p ->
                     Marker(
                         state = MarkerState(position = LatLng(p.lat, p.lng)),
                         title = p.name,
-                        onClick = {
-                            onOpenDetails(p.id)
-                            true
-                        }
+                        onClick = { onOpenDetails(p.id); true }
                     )
                 }
             }
-            // Botão "Pesquisar nesta zona"
+
+            // Pesquisar nesta zona — usa o raio atual do estado
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.End
             ) {
-                OutlinedButton(
-                    onClick = {
-                        val center = cameraPositionState.position.target
-                        vm.refreshAt(center, radiusMeters = 250)
-                    }
-                ) { Text(stringResource(R.string.search_in_this_area)) }
+                OutlinedButton(onClick = {
+                    val center = cameraPositionState.position.target
+                    vm.refreshAt(center, radiusMeters = state.radiusMeters)
+                }) { Text(stringResource(R.string.search_in_this_area)) }
             }
 
-            // Lista ordenada por pontuação
+            // Lista (ordenada no VM)
             LazyColumn(Modifier.fillMaxSize()) {
-                items(state.places.sortedByDescending { it.avgRating }) { p ->
+                items(state.places) { p ->
                     Column(Modifier.fillMaxWidth()) {
                         PlaceListItem(place = p, onClick = { onOpenDetails(p.id) })
                         Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.Start
+                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            TextButton(onClick = { onOpenDetails(p.id) }) {
-                                Text(stringResource(R.string.action_details))
-                            }
+                            TextButton(onClick = { onOpenDetails(p.id) }) { Text(stringResource(R.string.action_details)) }
                             Spacer(Modifier.width(12.dp))
-                            TextButton(onClick = { onOpenReview(p.id) }) {
-                                Text(stringResource(R.string.action_review))
-                            }
+                            TextButton(onClick = { onOpenReview(p.id) }) { Text(stringResource(R.string.action_review)) }
                         }
                         Divider()
                     }
@@ -203,30 +145,16 @@ fun SearchScreen(
     }
 }
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PermissionBanner(
-    showRationale: Boolean,
-    onRequest: () -> Unit,
-    onOpenSettings: () -> Unit
-) {
-    Surface(tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                text = if (showRationale)
-                    stringResource(R.string.perm_rationale)
-                else
-                    stringResource(R.string.perm_denied_permanent)
-            )
-            Spacer(Modifier.height(8.dp))
-            Row {
-                if (showRationale) {
-                    Button(onClick = onRequest) { Text(stringResource(R.string.action_allow_location)) }
-                } else {
-                    OutlinedButton(onClick = onOpenSettings) { Text(stringResource(R.string.action_open_settings)) }
-                    Spacer(Modifier.width(12.dp))
-                    TextButton(onClick = onRequest) { Text(stringResource(R.string.action_try_again)) }
-                }
-            }
-        }
-    }
+private fun RadiusChip(label: String, value: Int, current: Int, onSelect: (Int) -> Unit) {
+    FilterChip(
+        selected = current == value,
+        onClick = { onSelect(value) },
+        label = { Text(label) },
+        leadingIcon = null,
+        colors = FilterChipDefaults.filterChipColors()
+    )
 }
+

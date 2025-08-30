@@ -4,6 +4,7 @@ import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review
+import com.example.reviewapp.network.api.GooglePlacesApi
 import com.example.reviewapp.utils.ReviewRules
 // Firebase opcional (sincronização e fotos)
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,6 +13,7 @@ import com.google.firebase.storage.FirebaseStorage
 class ReviewRepositoryImpl(
     private val reviewDao: ReviewDao,
     private val placeDao: PlaceDao,
+
     private val firestore: FirebaseFirestore? = null,
     private val storage: FirebaseStorage? = null
 ) : ReviewRepository {

@@ -25,6 +25,7 @@ sealed class Route(val route: String) {
     data object AuthGate   : Route("authGate")
     data object Login      : Route("login")
     data object Register   : Route("register")
+    data object Home       : Route("home")
     data object Profile    : Route("profile")
     data object Search     : Route("search")
     data object Details    : Route("details/{placeId}") { fun build(id: String) = "details/$id" }
@@ -39,6 +40,7 @@ private val bottomRoutes = setOf(
     Route.History.route,
     Route.Profile.route
 )
+
 
 @Composable
 fun AppNavGraph(nav: NavHostController) {
@@ -55,11 +57,11 @@ fun AppNavGraph(nav: NavHostController) {
             startDestination = Route.AuthGate.route,
             modifier = Modifier.padding(innerPadding)
         )  {
-            // Gate decide login ou home
             composable(Route.AuthGate.route) {
                 val vm: AuthViewModel = hiltViewModel()
                 LaunchedEffect(Unit) {
-                    val target = if (vm.isLoggedIn()) Route.Search.route else Route.Login.route
+                    // pós-login: ir para Home (não para Search)
+                    val target = if (vm.isLoggedIn()) Route.Home.route else Route.Login.route
                     nav.navigate(target) {
                         popUpTo(Route.AuthGate.route) { inclusive = true }
                         launchSingleTop = true
@@ -74,7 +76,7 @@ fun AppNavGraph(nav: NavHostController) {
             composable(Route.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
-                        nav.navigate(Route.Search.route) {
+                        nav.navigate(Route.Home.route) { // ⟵ Home
                             popUpTo(Route.Login.route) { inclusive = true }
                             launchSingleTop = true
                         }
@@ -85,7 +87,7 @@ fun AppNavGraph(nav: NavHostController) {
             composable(Route.Register.route) {
                 RegisterScreen(
                     onRegisterSuccess = {
-                        nav.navigate(Route.Search.route) {
+                        nav.navigate(Route.Home.route) { // ⟵ Home
                             popUpTo(Route.Register.route) { inclusive = true }
                             launchSingleTop = true
                         }
@@ -94,34 +96,37 @@ fun AppNavGraph(nav: NavHostController) {
                 )
             }
 
-            // Tabs (mostram bottom bar)
+            // Tabs (com bottom bar)
+            composable(Route.Home.route) {
+                // usa a HomeScreen que criámos antes
+                HomeScreen(
+                    onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
+                    onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
+                    onOpenProfile = { nav.navigate(Route.Profile.route) }
+                )
+            }
             composable(Route.Search.route) {
+                // Search agora é só o Mapa (o teu SearchScreen atual já serve)
                 SearchScreen(
                     onOpenDetails = { placeId -> nav.navigate(Route.Details.build(placeId)) },
                     onOpenReview  = { placeId -> nav.navigate(Route.ReviewForm.build(placeId)) },
                     onOpenProfile = { nav.navigate(Route.Profile.route) }
                 )
             }
-            composable(Route.Leaderboard.route) {
-                // TODO: substitui pelo teu ecrã real
-                PlaceholderScreen("Top locais (Leaderboard)")
-            }
-            composable(Route.History.route) {
-                // TODO: substitui pelo teu ecrã real
-                PlaceholderScreen("O meu histórico")
-            }
+            composable(Route.Leaderboard.route) { PlaceholderScreen("Top locais (Leaderboard)") }
+            composable(Route.History.route)     { PlaceholderScreen("O meu histórico") }
             composable(Route.Profile.route) {
                 ProfileScreen(
                     onLogout = {
                         nav.navigate(Route.Login.route) {
-                            popUpTo(Route.Search.route) { inclusive = true }
+                            popUpTo(Route.Home.route) { inclusive = true }
                             launchSingleTop = true
                         }
                     }
                 )
             }
 
-            // Sem bottom bar
+            // Sem bottom bar (detalhes e review)
             composable(
                 route = Route.Details.route,
                 arguments = listOf(navArgument("placeId") { type = NavType.StringType })
@@ -147,7 +152,6 @@ fun AppNavGraph(nav: NavHostController) {
         }
     }
 }
-
 /** Placeholder simples para Leaderboard/History enquanto não tens os ecrãs reais */
 @Composable
 private fun PlaceholderScreen(text: String) {

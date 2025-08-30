@@ -1,24 +1,20 @@
 package com.example.reviewapp.network
 
-import com.example.reviewapp.network.api.GeopifyApi
-import com.squareup.moshi.Moshi
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
+
+import com.example.reviewapp.network.api.GooglePlacesApi
+
 import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitInstance {
-    private val moshi = Moshi.Builder().build()
-    private val client = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
-        .build()
+    private const val BASE_URL = "https://maps.googleapis.com/maps/api/"
 
-    val api: GeopifyApi by lazy {
+    val api: GooglePlacesApi by lazy {
         Retrofit.Builder()
-            .baseUrl("https://api.geoapify.com/")  // Geopify
-            .client(client)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(GeopifyApi::class.java)
+            .create(GooglePlacesApi::class.java)
     }
 }

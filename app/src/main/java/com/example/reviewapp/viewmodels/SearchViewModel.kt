@@ -8,6 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.repository.PlaceRepository
+import com.example.reviewapp.utils.logD
+import com.example.reviewapp.utils.logE
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
@@ -38,53 +40,47 @@ class SearchViewModel @Inject constructor(
 
     /** Pesquisa perto da localização atual do dispositivo */
     fun refresh(radiusMeters: Int = 250) = viewModelScope.launch {
-        // 1) permissões
-        val fineGranted = ContextCompat.checkSelfPermission(
-            appContext, Manifest.permission.ACCESS_FINE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        val coarseGranted = ContextCompat.checkSelfPermission(
-            appContext, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-        if (!fineGranted && !coarseGranted) return@launch
+        logD("VM.refresh(r=$radiusMeters) - checking permissions")
+        val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        logD("VM.refresh - perms fine=$fineGranted coarse=$coarseGranted")
+        if (!fineGranted && !coarseGranted) {
+            logD("VM.refresh - NO PERMISSION, abort")
+            return@launch
+        }
 
         try {
-            // 2) localização atual
             val token = CancellationTokenSource().token
-            val loc = locationProvider
-                .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token)
-                .await() ?: return@launch
+            logD("VM.refresh - requesting currentLocation")
+            val loc = locationProvider.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, token).await()
+            if (loc == null) {
+                logD("VM.refresh - location null, abort")
+                return@launch
+            }
+            logD("VM.refresh - got location: ${loc.latitude}, ${loc.longitude}")
 
-            // 3) usa o alias nearby do repositório
             val list = placeRepo.nearby(loc.latitude, loc.longitude, radiusMeters)
+            logD("VM.refresh - repo returned ${list.size} places")
             _state.update {
                 it.copy(cameraLatLng = LatLng(loc.latitude, loc.longitude), places = list)
             }
-        } catch (_: SecurityException) {
-            // permissões revogadas em runtime — ignora ou expõe estado de erro se precisares
+        } catch (se: SecurityException) {
+            logE("VM.refresh - SecurityException (perms were revoked?) ${se.message}", se)
+        } catch (t: Throwable) {
+            logE("VM.refresh - FAILED: ${t.message}", t)
         }
     }
 
-    /** Pesquisa perto de um ponto arbitrário (ex.: centro do mapa) */
     fun refreshAt(center: LatLng, radiusMeters: Int = 250) = viewModelScope.launch {
-        val list = placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
-        _state.update { it.copy(cameraLatLng = center, places = list) }
-    }
-    private val _searchState = MutableStateFlow<SearchState>(SearchState.Empty)
-    val searchState: StateFlow<SearchState> = _searchState
-
-    fun search(query: String) {
-        viewModelScope.launch {
-            _searchState.value = SearchState.Loading
-            try {
-                // Sua lógica de busca aqui...
-                // Exemplo: usar locationProvider para obter localização
-                _searchState.value = SearchState.Success(emptyList())
-            } catch (e: Exception) {
-                _searchState.value = SearchState.Error(e.message ?: "Erro desconhecido")
-            }
+        logD("VM.refreshAt(center=${center.latitude},${center.longitude}, r=$radiusMeters)")
+        try {
+            val list = placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
+            logD("VM.refreshAt - repo returned ${list.size} places")
+            _state.update { it.copy(cameraLatLng = center, places = list) }
+        } catch (t: Throwable) {
+            logE("VM.refreshAt - FAILED: ${t.message}", t)
         }
     }
-
     sealed class SearchState {
         object Empty : SearchState()
         object Loading : SearchState()

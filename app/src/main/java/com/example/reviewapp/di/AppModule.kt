@@ -1,3 +1,4 @@
+// di/AppModule.kt
 package com.example.reviewapp.di
 
 import android.content.Context
@@ -10,7 +11,7 @@ import com.example.reviewapp.data.repository.PlaceRepository
 import com.example.reviewapp.data.repository.PlaceRepositoryImpl
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.data.repository.ReviewRepositoryImpl
-import com.example.reviewapp.network.api.GeopifyApi
+import com.example.reviewapp.network.api.GooglePlacesApi
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -26,7 +27,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // -------- Room --------
+    // Room
     @Provides @Singleton
     fun provideDb(@ApplicationContext ctx: Context): AppDatabase =
         Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db").build()
@@ -34,27 +35,25 @@ object AppModule {
     @Provides fun providePlaceDao(db: AppDatabase): PlaceDao = db.placeDao()
     @Provides fun provideReviewDao(db: AppDatabase): ReviewDao = db.reviewDao()
 
-    // -------- Firebase --------
+    // Firebase
     @Provides @Singleton fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
     @Provides @Singleton fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
     @Provides @Singleton fun provideStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
-    // ❌ REMOVIDO: provider de FusedLocationProviderClient (fica no LocationModule)
-
-    // -------- Chaves (sem BuildConfig) --------
+    // 🔑 Google Places Web Service key (do secrets.xml)
     @Provides @Singleton
-    @Named("GEO_API_KEY")
-    fun provideGeoApiKey(@ApplicationContext ctx: Context): String =
-        ctx.getString(R.string.geo_api_key)
+    @Named("GOOGLE_PLACES_KEY")
+    fun provideGooglePlacesKey(@ApplicationContext ctx: Context): String =
+        ctx.getString(R.string.google_places_key)
 
-    // -------- Repositórios --------
+    // Repositório
     @Provides @Singleton
     fun providePlaceRepository(
         placeDao: PlaceDao,
-        api: GeopifyApi,
-        @Named("GEO_API_KEY") geoKey: String,
+        api: GooglePlacesApi,
+        @Named("GOOGLE_PLACES_KEY") googleKey: String,
         firestore: FirebaseFirestore
-    ): PlaceRepository = PlaceRepositoryImpl(placeDao, api, geoKey, firestore)
+    ): PlaceRepository = PlaceRepositoryImpl(placeDao, api, googleKey, firestore)
 
     @Provides @Singleton
     fun provideReviewRepository(

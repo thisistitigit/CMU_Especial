@@ -2,6 +2,7 @@ package com.example.reviewapp.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Leaderboard
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -23,6 +24,7 @@ data class BottomItem(
 )
 
 private val bottomItems = listOf(
+    BottomItem(Route.Home.route,         "Home",     Icons.Filled.Home),
     BottomItem(Route.Search.route,      "Explorar", Icons.Filled.Search),
     BottomItem(Route.Leaderboard.route, "Top",      Icons.Filled.Leaderboard),
     BottomItem(Route.History.route,     "Histórico",Icons.Filled.History),

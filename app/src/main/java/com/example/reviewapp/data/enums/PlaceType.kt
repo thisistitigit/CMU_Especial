@@ -5,8 +5,6 @@ enum class PlaceType(val apiName: String) {
     BAKERY("bakery"),
     CAFE("cafe"),
     RESTAURANT("restaurant"),
-    //MEAL_TAKEAWAY("meal_takeaway"),
-    //MEAL_DELIVERY("meal_delivery"),
     GROCERY_OR_SUPERMARKET("grocery_or_supermarket"),
     CONVENIENCE_STORE("convenience_store"),
     STORE("store");

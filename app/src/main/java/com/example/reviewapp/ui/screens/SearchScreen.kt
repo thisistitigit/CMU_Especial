@@ -45,7 +45,10 @@ fun SearchScreen(
 ) {
     val ctx = LocalContext.current
     val state by vm.state.collectAsState()
-    val perm = rememberLocationPermissionState(onGranted = { vm.refresh() })
+
+    // IMPORTANTE: não recentrar automaticamente ao (re)entrar no ecrã
+    // Mantemos a permissão, mas sem vm.refresh() no onGranted.
+    val perm = rememberLocationPermissionState(onGranted = { /* no-op: não recentrar */ })
 
     // --- TopBar state (pesquisa + filtro) ---
     var searchActive by remember { mutableStateOf(false) }
@@ -139,7 +142,7 @@ fun SearchScreen(
             )
         },
         floatingActionButton = {
-            // FAB "Minha localização"
+            // Só recentra se o utilizador pedir explicitamente
             FloatingActionButton(onClick = { if (perm.isGranted) vm.refresh() else perm.ask() }) {
                 Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
             }
@@ -157,21 +160,20 @@ fun SearchScreen(
 
             // ====== MAPA + interação de arrasto ======
             val cameraPositionState = rememberCameraPositionState {
+                // Continua no último centro pedido ao VM (fica sticky ao voltar do Details)
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
-            // anima quando o VM muda o centro (ex.: pós-permissão)
+            // anima apenas quando o VM muda explicitamente o centro (Pesquisar aqui / geocode / FAB)
             LaunchedEffect(state.cameraLatLng) {
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f))
             }
 
-            // detetar quando o utilizador PÁRA de mexer no mapa
+            // detetar quando o utilizador pára de mexer no mapa
             var pendingCenter by remember { mutableStateOf<LatLng?>(null) }
             LaunchedEffect(cameraPositionState) {
                 snapshotFlow { cameraPositionState.isMoving }
                     .collectLatest { moving ->
-                        if (!moving) {
-                            pendingCenter = cameraPositionState.position.target
-                        }
+                        if (!moving) pendingCenter = cameraPositionState.position.target
                     }
             }
 
@@ -213,7 +215,7 @@ fun SearchScreen(
                         )
                 )
 
-                // CTA “Pesquisar aqui” aparece só quando há um novo centro pendente
+                // “Pesquisar aqui” apenas quando o utilizador moveu o mapa
                 if (pendingCenter != null) {
                     ElevatedAssistChip(
                         onClick = {
@@ -229,7 +231,7 @@ fun SearchScreen(
                 }
             }
 
-            // ====== LISTA (já ordenada por rating no VM quando filtrada) ======
+            // ====== LISTA ======
             LazyColumn(Modifier.fillMaxSize()) {
                 items(state.places) { p ->
                     Column(Modifier.fillMaxWidth()) {
@@ -239,9 +241,13 @@ fun SearchScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
-                            TextButton(onClick = { onOpenDetails(p.id) }) { Text(stringResource(R.string.action_details)) }
+                            TextButton(onClick = { onOpenDetails(p.id) }) {
+                                Text(stringResource(R.string.action_details))
+                            }
                             Spacer(Modifier.width(12.dp))
-                            TextButton(onClick = { onOpenReview(p.id) }) { Text(stringResource(R.string.action_review)) }
+                            TextButton(onClick = { onOpenReview(p.id) }) {
+                                Text(stringResource(R.string.action_review))
+                            }
                         }
                         Divider()
                     }

@@ -39,14 +39,5 @@
             </intent-filter>
         </activity>
 
-        <receiver
-            android:name=".services.GeofenceReceiver"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="com.google.android.gms.actions.GEOFENCE_EVENT"/>
-            </intent-filter>
-        </receiver>
-
     </application>
 </manifest>

@@ -1,17 +1,23 @@
 // com/example/reviewapp/ui/screens/SearchScreen.kt
-// com/example/reviewapp/ui/screens/SearchScreen.kt
 package com.example.reviewapp.ui.screens
 
+import android.content.Context
+import android.location.Geocoder
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,6 +30,10 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,16 +43,95 @@ fun SearchScreen(
     onOpenReview: (String) -> Unit,
     onOpenProfile: () -> Unit
 ) {
+    val ctx = LocalContext.current
     val state by vm.state.collectAsState()
-
-    // ⟵ encapsulado num helper reutilizável
     val perm = rememberLocationPermissionState(onGranted = { vm.refresh() })
+
+    // --- TopBar state (pesquisa + filtro) ---
+    var searchActive by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+    var showFilter by remember { mutableStateOf(false) }
+    var geocodingInFlight by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.search_title)) },
+                title = {
+                    if (searchActive) {
+                        Column(Modifier.fillMaxWidth()) {
+                            TextField(
+                                value = query,
+                                onValueChange = { query = it },
+                                singleLine = true,
+                                placeholder = { Text(stringResource(R.string.search_location_hint)) },
+                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                                textStyle = LocalTextStyle.current,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                                )
+                            )
+                            if (geocodingInFlight) {
+                                LinearProgressIndicator(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        Text(stringResource(R.string.search_title))
+                    }
+                },
                 actions = {
+                    // ícone de pesquisa (toggle + executar se já ativo)
+                    IconButton(onClick = {
+                        if (searchActive && query.isNotBlank()) {
+                            scope.launch {
+                                geocodingInFlight = true
+                                val latLng = geocodeFirstLatLng(ctx, query)
+                                geocodingInFlight = false
+                                latLng?.let { vm.refreshAt(it, radiusMeters = state.radiusMeters) }
+                            }
+                        } else {
+                            searchActive = true
+                        }
+                    }) {
+                        Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
+                    }
+
+                    // ícone de filtro subtil
+                    Box {
+                        IconButton(onClick = { showFilter = true }) {
+                            Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.action_filter))
+                        }
+                        DropdownMenu(expanded = showFilter, onDismissRequest = { showFilter = false }) {
+                            Text(
+                                stringResource(R.string.filter_radius_title),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.radius_250m)) },
+                                onClick = { vm.setRadiusMeters(250); showFilter = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.radius_1km)) },
+                                onClick = { vm.setRadiusMeters(1000); showFilter = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.radius_3km)) },
+                                onClick = { vm.setRadiusMeters(3000); showFilter = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.radius_5km)) },
+                                onClick = { vm.setRadiusMeters(5000); showFilter = false }
+                            )
+                        }
+                    }
+
                     IconButton(onClick = onOpenProfile) {
                         Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.search_profile_cd))
                     }
@@ -50,9 +139,8 @@ fun SearchScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                if (perm.isGranted) vm.refresh() else perm.ask()
-            }) {
+            // FAB "Minha localização"
+            FloatingActionButton(onClick = { if (perm.isGranted) vm.refresh() else perm.ask() }) {
                 Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
             }
         }
@@ -66,32 +154,27 @@ fun SearchScreen(
                     onOpenSettings = perm.openSettings
                 )
             }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.radius_label), style = MaterialTheme.typography.labelLarge)
-                Spacer(Modifier.width(12.dp))
-                RadiusChip(label = stringResource(R.string.radius_250m), value = 250,  current = state.radiusMeters) { vm.setRadiusMeters(it) }
-                Spacer(Modifier.width(8.dp))
-                RadiusChip(label = stringResource(R.string.radius_1km),  value = 1000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
-                Spacer(Modifier.width(8.dp))
-                RadiusChip(label = stringResource(R.string.radius_3km),  value = 3000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
-                Spacer(Modifier.width(8.dp))
-                RadiusChip(label = stringResource(R.string.radius_5km),  value = 5000, current = state.radiusMeters) { vm.setRadiusMeters(it) }
-            }
-            // ===== Raio (chips) — igual ao que já tinhas =====
-            // ... RadiusChip row aqui ...
 
-            // ===== Mapa =====
+            // ====== MAPA + interação de arrasto ======
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
+            // anima quando o VM muda o centro (ex.: pós-permissão)
             LaunchedEffect(state.cameraLatLng) {
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f))
             }
+
+            // detetar quando o utilizador PÁRA de mexer no mapa
+            var pendingCenter by remember { mutableStateOf<LatLng?>(null) }
+            LaunchedEffect(cameraPositionState) {
+                snapshotFlow { cameraPositionState.isMoving }
+                    .collectLatest { moving ->
+                        if (!moving) {
+                            pendingCenter = cameraPositionState.position.target
+                        }
+                    }
+            }
+
             val mapProps = remember(perm.isGranted) {
                 MapProperties(isMyLocationEnabled = perm.isGranted)
             }
@@ -99,39 +182,62 @@ fun SearchScreen(
                 MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false)
             }
 
-            GoogleMap(
-                modifier = Modifier.fillMaxWidth().height(260.dp),
-                cameraPositionState = cameraPositionState,
-                properties = mapProps,
-                uiSettings = uiSettings
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
             ) {
-                state.places.forEach { p ->
-                    Marker(
-                        state = MarkerState(position = LatLng(p.lat, p.lng)),
-                        title = p.name,
-                        onClick = { onOpenDetails(p.id); true }
+                GoogleMap(
+                    modifier = Modifier.matchParentSize(),
+                    cameraPositionState = cameraPositionState,
+                    properties = mapProps,
+                    uiSettings = uiSettings
+                ) {
+                    state.places.forEach { p ->
+                        Marker(
+                            state = MarkerState(position = LatLng(p.lat, p.lng)),
+                            title = p.name,
+                            onClick = { onOpenDetails(p.id); true }
+                        )
+                    }
+                }
+
+                // Pin fixo no centro (subtil)
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(12.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = MaterialTheme.shapes.extraSmall
+                        )
+                )
+
+                // CTA “Pesquisar aqui” aparece só quando há um novo centro pendente
+                if (pendingCenter != null) {
+                    ElevatedAssistChip(
+                        onClick = {
+                            val center = pendingCenter!!
+                            pendingCenter = null
+                            vm.refreshAt(center, radiusMeters = state.radiusMeters)
+                        },
+                        label = { Text(stringResource(R.string.search_here)) },
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp)
                     )
                 }
             }
 
-            // Pesquisar nesta zona — usa o raio atual do estado
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                OutlinedButton(onClick = {
-                    val center = cameraPositionState.position.target
-                    vm.refreshAt(center, radiusMeters = state.radiusMeters)
-                }) { Text(stringResource(R.string.search_in_this_area)) }
-            }
-
-            // Lista (ordenada no VM)
+            // ====== LISTA (já ordenada por rating no VM quando filtrada) ======
             LazyColumn(Modifier.fillMaxSize()) {
                 items(state.places) { p ->
                     Column(Modifier.fillMaxWidth()) {
                         PlaceListItem(place = p, onClick = { onOpenDetails(p.id) })
                         Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
                         ) {
                             TextButton(onClick = { onOpenDetails(p.id) }) { Text(stringResource(R.string.action_details)) }
                             Spacer(Modifier.width(12.dp))
@@ -145,16 +251,14 @@ fun SearchScreen(
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun RadiusChip(label: String, value: Int, current: Int, onSelect: (Int) -> Unit) {
-    FilterChip(
-        selected = current == value,
-        onClick = { onSelect(value) },
-        label = { Text(label) },
-        leadingIcon = null,
-        colors = FilterChipDefaults.filterChipColors()
-    )
+/** Geocoding simples em background (SEM Compose aqui). */
+private suspend fun geocodeFirstLatLng(
+    context: Context,
+    query: String
+): LatLng? = withContext(Dispatchers.IO) {
+    @Suppress("DEPRECATION")
+    runCatching {
+        val list = Geocoder(context).getFromLocationName(query, 1)
+        list?.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+    }.getOrNull()
 }
-

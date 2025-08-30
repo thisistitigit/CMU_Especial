@@ -70,24 +70,38 @@ class SearchViewModel @Inject constructor(
 
     private suspend fun doFetch(center: LatLng, radiusMeters: Int) {
         _state.update { it.copy(isLoading = true, error = null) }
-        val list = runCatching {
-            placeRepo.nearby(center.latitude, center.longitude, radiusMeters)
-        }.onFailure { logE("VM.fetch fail: ${it.message}", it) }
-            .getOrElse { emptyList() }
+
+        suspend fun fetch(r: Int): List<Place> =
+            runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
+                .onFailure { logE("VM.fetch fail r=$r: ${it.message}", it) }
+                .getOrElse { emptyList() }
+
+        // 1ª tentativa com o raio pedido
+        var usedRadius = radiusMeters
+        var list = fetch(usedRadius)
+
+        // Fallback: se vazio, sobe o raio para 6000m (ou mantém maior)
+        if (list.isEmpty() && usedRadius < 6000) {
+            usedRadius = 6000
+            list = fetch(usedRadius)
+            logD("VM.fetch fallback to radius=$usedRadius -> ${list.size} places")
+        }
 
         rawPlaces = list
         _state.update {
             it.copy(
                 cameraLatLng = center,
                 searchCenter = center,
-                fetchedRadiusMeters = radiusMeters,
-                places = applyLocalRadiusFilter(center, it.radiusMeters, rawPlaces),
+                fetchedRadiusMeters = usedRadius,
+                // filtra localmente com o raio visível (se for menor que o usado no fetch)
+                places = applyLocalRadiusFilter(center, it.radiusMeters.coerceAtMost(usedRadius), rawPlaces),
                 isLoading = false,
                 error = null
             )
         }
-        logD("VM.fetch OK center=$center r=$radiusMeters raw=${rawPlaces.size} shown=${_state.value.places.size}")
+        logD("VM.fetch OK center=$center rUsed=$usedRadius raw=${rawPlaces.size} shown=${_state.value.places.size}")
     }
+
 
     private suspend fun preload() {
         logD("VM.preload - start")

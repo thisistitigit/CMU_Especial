@@ -112,6 +112,12 @@
     <string name="radius_1km">1 km</string>
     <string name="radius_3km">3 km</string>
     <string name="radius_5km">5 km</string>
+    <!-- Filtro / pesquisa -->
+    <string name="action_filter">Filtrar</string>
+    <string name="filter_radius_title">Raio de pesquisa</string>
+    <string name="search_location_hint">Pesquisar local (morada, cidade…)</string>
+    <string name="search_here">Pesquisar aqui</string>
+    <string name="drag_to_move_map">Arrasta o mapa para mudar a zona</string>
 
     <!-- Permissões de localização (banner) -->
     <string name="perm_rationale">A app precisa da tua localização para centrar o mapa perto de ti.</string>

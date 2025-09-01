@@ -192,7 +192,9 @@ fun AppNavGraph(nav: NavHostController) {
                         placeId = placeId,
                         onBack = { nav.popBackStack() },
                         onReview = { nav.navigate(Route.ReviewForm.build(placeId))},
-                        onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) }
+                        onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) },
+                        onOpenAllReviews = { id -> nav.navigate(Route.ReviewsAll.build(id)) }
+
                     )
                 }
                 composable(

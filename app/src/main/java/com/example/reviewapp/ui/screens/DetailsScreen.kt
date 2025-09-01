@@ -181,9 +181,8 @@ fun DetailsScreen(
                         // ===== Ratings: Google + Interno =====
                         item {
                             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                // Google
-                                place.avgRating?.let { gAvg ->
-                                    val gCount = place.ratingsCount ?: 0
+                                // Google (mostrar só se houver contagem > 0)
+                                if (place.ratingsCount > 0) {
                                     Text(
                                         text = stringResource(R.string.ratings_google_title),
                                         style = MaterialTheme.typography.titleSmall
@@ -192,6 +191,8 @@ fun DetailsScreen(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
+                                        val gAvg = place.avgRating
+                                        val gCount = place.ratingsCount
                                         StarRating(rating = gAvg)
                                         val countStr = pluralStringResource(
                                             R.plurals.ratings_count, gCount, gCount
@@ -207,26 +208,26 @@ fun DetailsScreen(
                                     Spacer(modifier = Modifier.padding(top = 8.dp))
                                 }
 
-                                // Interno
+                                // Interno (usar métricas calculadas no VM)
                                 Text(
                                     text = stringResource(R.string.ratings_internal_title),
                                     style = MaterialTheme.typography.titleSmall
                                 )
-                                if (place.internalRatingsCount > 0) {
+                                if (state.internalCount > 0) {
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        StarRating(rating = place.internalAvgRating)
+                                        StarRating(rating = state.internalAvg)
                                         val countStr = pluralStringResource(
                                             R.plurals.ratings_count,
-                                            place.internalRatingsCount,
-                                            place.internalRatingsCount
+                                            state.internalCount,
+                                            state.internalCount
                                         )
                                         Text(
                                             text = stringResource(
                                                 R.string.format_score_with_count,
-                                                place.avgRating,
+                                                state.internalAvg,
                                                 countStr
                                             )
                                         )
@@ -243,12 +244,25 @@ fun DetailsScreen(
                         }
 
                         // ===== Secção Reviews =====
+                        // Cabeçalho da secção Reviews (Top 10 + "Ver todos")
                         item {
-                            Text(
-                                text = stringResource(R.string.reviews_section_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                            )
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.reviews_section_title_top10),
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                                if (state.internalCount > state.latestReviews.size) {
+                                    TextButton(onClick = { onOpenAllReviews(place.id) }) {
+                                        Text(stringResource(R.string.reviews_view_all))
+                                    }
+                                }
+                            }
                         }
 
                         if (state.latestReviews.isEmpty()) {

@@ -26,6 +26,8 @@ class DetailsViewModel @Inject constructor(
     data class UiState(
         val place: Place? = null,
         val latestReviews: List<Review> = emptyList(),
+        val internalAvg: Double = 0.0,          // ← NOVO
+        val internalCount: Int = 0,             // ← NOVO
         val isLoading: Boolean = false,
         val error: Throwable? = null
     )
@@ -39,12 +41,26 @@ class DetailsViewModel @Inject constructor(
         val p = runCatching { placeRepo.getDetails(placeId) }
             .onFailure { e -> _state.update { it.copy(error = e) } }
             .getOrNull()
-
         _state.update { it.copy(place = p) }
 
-        val reviews = runCatching { reviewRepo.latestReviews(placeId) }
+        // Top 10 para mostrar na página
+        val latest = runCatching { reviewRepo.latestReviews(placeId) }
             .getOrDefault(emptyList())
-        _state.update { it.copy(latestReviews = reviews.take(10), isLoading = false) }
+
+        // Todas as reviews para calcular estatística correta
+        val all = runCatching { reviewRepo.allReviews(placeId) }
+            .getOrDefault(emptyList())
+        val count = all.size
+        val avg = if (count > 0) all.map { it.stars }.average() else 0.0
+
+        _state.update {
+            it.copy(
+                latestReviews = latest.take(10),
+                internalAvg = avg,
+                internalCount = count,
+                isLoading = false
+            )
+        }
     }
 
     fun call(phone: String) {

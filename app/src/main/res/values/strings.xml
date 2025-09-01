@@ -33,7 +33,9 @@
         <string name="ratings_not_available">Sem avaliações</string>
 
         <!-- Secção de reviews -->
-        <string name="reviews_section_title">Últimas 10 análises</string>
+        <string name="reviews_all_title">Todos os comentários</string>
+        <string name="reviews_view_all">Ver todos</string>
+        <string name="reviews_section_title_top10">Top 10 comentários</string>
         <string name="reviews_empty">Ainda não existem análises para este local.</string>
         <string name="review_user_name">Nome do utilizador</string>
         <string name="review_pastry_name">Doçaria avaliada</string>

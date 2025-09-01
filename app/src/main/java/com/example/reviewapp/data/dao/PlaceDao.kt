@@ -13,6 +13,8 @@ interface PlaceDao {
 
     @Query("SELECT * FROM places ORDER BY avgRating DESC, ratingsCount DESC LIMIT :limit")
     suspend fun leaderboard(limit: Int): List<PlaceEntity>
+    @Query("SELECT * FROM places")
+    suspend fun listAll(): List<PlaceEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(items: List<PlaceEntity>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(item: PlaceEntity)

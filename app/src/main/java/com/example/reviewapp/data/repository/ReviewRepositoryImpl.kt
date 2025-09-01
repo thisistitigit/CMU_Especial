@@ -88,6 +88,12 @@ class ReviewRepositoryImpl(
             now = now
         )
     }
+    override suspend fun getReview(id: String): Review? =
+        reviewDao.getById(id)?.toModel()
+
+    override suspend fun allReviews(placeId: String): List<Review> =
+        reviewDao.allForPlace(placeId).map { it.toModel() }
+
 }
 
 // ---- Mapeadores ----

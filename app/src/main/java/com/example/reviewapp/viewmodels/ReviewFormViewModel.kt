@@ -120,6 +120,13 @@ class ReviewFormViewModel @Inject constructor(
         recompute()
     }
 
+    fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
+        val uid = _state.value.userId
+        val last = if (uid.isNotBlank()) reviewRepo.history(uid).firstOrNull()?.createdAt else null
+        _state.update { it.copy(distanceMeters = distanceMeters, lastReviewAt = last) }
+        recompute()
+    }
+
     /* -------- lógica de regras e validação -------- */
 
     private fun recompute() {

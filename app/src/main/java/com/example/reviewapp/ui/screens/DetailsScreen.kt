@@ -43,7 +43,9 @@ fun DetailsScreen(
     placeId: String,
     vm: DetailsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onReview: (String) -> Unit = {}
+    onReview: (String) -> Unit = {},
+    onOpenReviewDetails: (String) -> Unit = {},
+    onOpenAllReviews: (String) -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
 
@@ -259,8 +261,7 @@ fun DetailsScreen(
                             }
                         } else {
                             items(state.latestReviews) { r ->
-                                // O teu ReviewCard já mostra: foto (local/cloud), nome do user, pastryName, stars, comment, data
-                                ReviewCard(review = r)
+                                ReviewCard(review = r, onClick = { onOpenReviewDetails(r.id) })
                                 Divider()
                             }
                         }

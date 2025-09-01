@@ -1,4 +1,3 @@
-// com/example/reviewapp/navigation/AppNavGraph.kt
 package com.example.reviewapp.navigation
 
 import androidx.compose.foundation.layout.Box
@@ -33,6 +32,9 @@ sealed class Route(val route: String) {
     data object Register   : Route("register")
     data object Main       : Route("main")
 
+    data object ReviewsAll : Route("reviewsAll/{placeId}") {
+        fun build(id: String) = "reviewsAll/$id"
+    }
     data object Home       : Route("home")
     data object Profile    : Route("profile")
     data object Search     : Route("search")
@@ -40,10 +42,13 @@ sealed class Route(val route: String) {
     data object ReviewForm : Route("review/{placeId}") { fun build(id: String) = "review/$id" }
     data object Leaderboard: Route("leaderboard")
     data object History    : Route("history")
+    data object ReviewDetails : Route("reviewDetails/{reviewId}") {
+        fun build(id: String) = "reviewDetails/$id"
+    }
 }
 
 private val bottomRoutes = setOf(
-    Route.Home.route,         // ⟵ voltar a mostrar no Home
+    Route.Home.route,
     Route.Search.route,
     Route.Leaderboard.route,
     Route.History.route,
@@ -102,6 +107,17 @@ fun AppNavGraph(nav: NavHostController) {
                     onGoLogin = { nav.popBackStack() }
                 )
             }
+            composable(
+                route = Route.ReviewsAll.route,
+                arguments = listOf(navArgument("placeId") { type = NavType.StringType })
+            ) { back ->
+                val placeId = back.arguments?.getString("placeId").orEmpty()
+                AllReviewsScreen(
+                    placeId = placeId,
+                    onBack = { nav.popBackStack() },
+                    onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) }
+                )
+            }
 
             // Tabs (com bottom bar)
             composable(Route.Home.route) {
@@ -149,7 +165,11 @@ fun AppNavGraph(nav: NavHostController) {
                     )
                 }
 
-                composable(Route.Leaderboard.route) { PlaceholderScreen(stringResource(R.string.placeholder_leaderboard)) }
+                composable(Route.Leaderboard.route) {
+                    LeaderboardScreen(
+                        onPlaceClick = { id -> nav.navigate(Route.Details.build(id)) }
+                    )
+                }
                 composable(Route.History.route) { PlaceholderScreen(stringResource(R.string.placeholder_history)) }
                 composable(Route.Profile.route) {
                     ProfileScreen(
@@ -171,9 +191,21 @@ fun AppNavGraph(nav: NavHostController) {
                     DetailsScreen(
                         placeId = placeId,
                         onBack = { nav.popBackStack() },
-                        onReview = { nav.navigate(Route.ReviewForm.build(placeId)) }
+                        onReview = { nav.navigate(Route.ReviewForm.build(placeId))},
+                        onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) }
                     )
                 }
+                composable(
+                    route = Route.ReviewDetails.route,
+                    arguments = listOf(navArgument("reviewId") { type = NavType.StringType })
+                ) { back ->
+                    val reviewId = back.arguments?.getString("reviewId").orEmpty()
+                    ReviewDetailScreen(
+                        reviewId = reviewId,
+                        onBack = { nav.popBackStack() }
+                    )
+                }
+
                 composable(
                     route = Route.ReviewForm.route,
                     arguments = listOf(navArgument("placeId") { type = NavType.StringType })

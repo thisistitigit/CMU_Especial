@@ -124,9 +124,30 @@
     <string name="search_location_hint">Pesquisar local (morada, cidade…)</string>
     <string name="search_here">Pesquisar aqui</string>
     <string name="drag_to_move_map">Arrasta o mapa para mudar a zona</string>
-
+    <!-- Leaderboard -->
+    <string name="leaderboard_title">Leaderboard</string>
+    <string name="leaderboard_tab_establishments">Estabelecimentos</string>
+    <string name="leaderboard_tab_pastries">Doçaria</string>
+    <string name="leaderboard_empty_establishments">Ainda não há estabelecimentos com avaliações internas.</string>
+    <string name="leaderboard_empty_pastries">Ainda não há doçarias avaliadas.</string>
+    <string name="reviews_short">reviews</string>
+    <string name="pastry_label">Doçaria</string>
     <!-- Permissões de localização (banner) -->
     <string name="perm_rationale">A app precisa da tua localização para centrar o mapa perto de ti.</string>
     <string name="perm_denied_permanent">Permissão de localização desativada. Concede acesso para centrar o mapa na tua posição.</string>
+    <!-- Review form -->
+    <string name="review_new_title">Nova avaliação</string>
+    <string name="field_pastry">Doçaria</string>
+    <string name="field_comment">Comentário</string>
+    <string name="action_take_photo">Tirar foto</string>
+    <string name="action_pick_gallery">Escolher da galeria</string>
+    <string name="action_submit">Submeter</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="rules_not_met">Precisas de estar a ≤ 50 m e a última avaliação tem de ter mais de 30 minutos.</string>
 
+    <!-- Detalhe da review -->
+    <string name="review_details_title">Detalhe da avaliação</string>
+    <string name="review_open_external">Abrir imagem</string>
+    <string name="review_photo">Foto da avaliação</string>
+    <string name="review_no_photo">Sem foto</string>
     </resources>

@@ -8,8 +8,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.repository.PlaceRepository
-import com.example.reviewapp.utils.logD
-import com.example.reviewapp.utils.logE
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.maps.model.LatLng
@@ -83,7 +81,6 @@ class SearchViewModel @Inject constructor(
 
         suspend fun fetch(r: Int): List<Place> =
             runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
-                .onFailure { logE("VM.fetch SEARCH r=$r: ${it.message}", it) }
                 .getOrElse { emptyList() }
 
         var usedRadius = radiusMeters
@@ -91,7 +88,6 @@ class SearchViewModel @Inject constructor(
         if (list.isEmpty() && usedRadius < 6000) {
             usedRadius = 6000
             list = fetch(usedRadius)
-            logD("VM.fetch SEARCH fallback radius=$usedRadius -> ${list.size} places")
         }
 
         rawSearchPlaces = list
@@ -111,7 +107,6 @@ class SearchViewModel @Inject constructor(
         // não bloquear o ecrã todo por causa do near me
         suspend fun fetch(r: Int): List<Place> =
             runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
-                .onFailure { logE("VM.fetch NEARME r=$r: ${it.message}", it) }
                 .getOrElse { emptyList() }
 
         var usedRadius = radiusMeters
@@ -119,7 +114,6 @@ class SearchViewModel @Inject constructor(
         if (list.isEmpty() && usedRadius < 6000) {
             usedRadius = 6000
             list = fetch(usedRadius)
-            logD("VM.fetch NEARME fallback radius=$usedRadius -> ${list.size} places")
         }
 
         rawNearMePlaces = list
@@ -135,7 +129,6 @@ class SearchViewModel @Inject constructor(
     // ---------- BOOTSTRAP ----------
 
     private suspend fun preload() {
-        logD("VM.preload - start")
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
 
@@ -156,7 +149,6 @@ class SearchViewModel @Inject constructor(
                     return
                 }
             } catch (t: Throwable) {
-                logE("VM.preload location fail: ${t.message}", t)
             }
         }
 
@@ -210,7 +202,6 @@ class SearchViewModel @Inject constructor(
 
     /** Pesquisa numa área específica (geocoding ou mapa). NÃO mexe no “perto de si”. */
     fun refreshAt(center: LatLng, radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
-        logD("VM.refreshAt(center=${center.latitude},${center.longitude}, r=$radiusMeters)")
         doFetchSearch(center, radiusMeters)
     }
 }

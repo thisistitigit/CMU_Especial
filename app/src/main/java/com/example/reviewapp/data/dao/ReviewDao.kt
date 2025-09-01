@@ -8,14 +8,25 @@ import androidx.room.Query
 import androidx.room.RoomDatabase
 import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.locals.ReviewEntity
+// ReviewDao.kt
 @Dao
 interface ReviewDao {
     @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC LIMIT 10")
     suspend fun latestForPlace(placeId: String): List<ReviewEntity>
 
+    @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC")
+    suspend fun allForPlace(placeId: String): List<ReviewEntity> // ← NOVO
+
     @Query("SELECT * FROM reviews WHERE userId = :userId ORDER BY createdAt DESC")
     suspend fun history(userId: String): List<ReviewEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(item: ReviewEntity)
+    @Query("SELECT * FROM reviews WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): ReviewEntity?
+
+    @Query("SELECT * FROM reviews")
+    suspend fun listAll(): List<ReviewEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(item: ReviewEntity)
 }
 

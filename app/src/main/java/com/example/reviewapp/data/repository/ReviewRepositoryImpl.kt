@@ -12,6 +12,7 @@ import com.example.reviewapp.utils.ReviewRules
 import com.google.firebase.auth.FirebaseAuth
 // Firebase opcional (sincronização e fotos)
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +23,6 @@ import kotlinx.coroutines.tasks.await
 class ReviewRepositoryImpl(
     private val reviewDao: ReviewDao,
     private val placeDao: PlaceDao,
-
     private val firestore: FirebaseFirestore? = null,
     private val storage: FirebaseStorage? = null,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -36,6 +36,7 @@ class ReviewRepositoryImpl(
     override suspend fun addReview(review: Review) {
         ensureSignedInIfNeeded()
         val uid = currentUid() ?: review.userId // fallback
+        Log.d(TAG, "UID=${auth.currentUser?.uid}")
 
         // força consistência do user na review guardada
         val normalized = review.copy(userId = uid)
@@ -49,8 +50,12 @@ class ReviewRepositoryImpl(
         if (db == null || st == null) return
 
         val cloudUrl = uploadPhotoIfNeeded(st, normalized)
-        saveReviewDocs(db, normalized, cloudUrl)
-
+        try {
+            saveReviewDocs(db, normalized, cloudUrl)   // <- agora é suspend e lança se falhar
+        } catch (e: Exception) {
+            Log.e(TAG, "Firestore write failed", e)
+            // opcional: rethrow ou mostrar snackbar/estado de erro
+        }
         if (cloudUrl != null) {
             CoroutineScope(Dispatchers.IO).launch {
                 reviewDao.updateCloudUrl(normalized.id, cloudUrl)
@@ -105,18 +110,9 @@ class ReviewRepositoryImpl(
         }
 
         /** Grava a review em `places/{placeId}/reviews/{id}` e `users/{userId}/reviews/{id}`. */
-        private fun saveReviewDocs(db: FirebaseFirestore, review: Review, cloudUrl: String?) {
-            val publicRef = db.collection("places")
-                .document(review.placeId)
-                .collection("reviews")
-                .document(review.id)
 
-            val userRef = db.collection("users")
-                .document(review.userId)
-                .collection("reviews")
-                .document(review.id)
-
-            val payload = mapOf(
+        private fun reviewPayload(review: Review, cloudUrl: String?): Map<String, Any> {
+            val m = mutableMapOf<String, Any>(
                 "id" to review.id,
                 "placeId" to review.placeId,
                 "userId" to review.userId,
@@ -124,19 +120,41 @@ class ReviewRepositoryImpl(
                 "pastryName" to review.pastryName,
                 "stars" to review.stars,
                 "comment" to review.comment,
-                "photoCloudUrl" to cloudUrl,   // pode ser null
                 "createdAt" to review.createdAt
             )
-
-            publicRef.set(payload)
-                .addOnSuccessListener { Log.d(TAG, "saveReviewDocs: publicRef set OK") }
-                .addOnFailureListener { e -> Log.e(TAG, "saveReviewDocs: publicRef set failed", e) }
-
-            userRef.set(payload)
-                .addOnSuccessListener { Log.d(TAG, "saveReviewDocs: userRef set OK") }
-                .addOnFailureListener { e -> Log.e(TAG, "saveReviewDocs: userRef set failed", e) }
+            if (cloudUrl != null) m["photoCloudUrl"] = cloudUrl   // só inclui se existir
+            return m
         }
 
+    private suspend fun saveReviewDocs(
+        db: FirebaseFirestore,
+        review: Review,
+        cloudUrl: String?
+    ) {
+        val publicRef = db.collection("places")
+            .document(review.placeId)
+            .collection("reviews")
+            .document(review.id)
+
+        val userRef = db.collection("users")
+            .document(review.userId)
+            .collection("reviews")
+            .document(review.id)
+
+        val payload = reviewPayload(review, cloudUrl)
+
+        val batch = db.batch()
+        batch.set(publicRef, payload, SetOptions.merge())
+        batch.set(userRef,    payload, SetOptions.merge())
+
+        try {
+            batch.commit().await()
+            Log.d("ReviewRepo", "saveReviewDocs: batch OK (place=${review.placeId}, review=${review.id})")
+        } catch (e: Exception) {
+            Log.e("ReviewRepo", "saveReviewDocs: batch FAILED", e)
+            throw e
+        }
+    }
 
         override suspend fun latestReviews(placeId: String): List<Review> =
         reviewDao.latestForPlace(placeId).map { it.toModel() }

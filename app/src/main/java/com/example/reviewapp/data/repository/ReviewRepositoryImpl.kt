@@ -7,10 +7,10 @@ import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review
-import com.example.reviewapp.network.api.GooglePlacesApi
+import com.example.reviewapp.data.remote.dto.toMapNonNull
+import com.example.reviewapp.network.mappers.toRemoteDto
 import com.example.reviewapp.utils.ReviewRules
 import com.google.firebase.auth.FirebaseAuth
-// Firebase opcional (sincronização e fotos)
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
@@ -25,7 +25,8 @@ class ReviewRepositoryImpl(
     private val placeDao: PlaceDao,
     private val firestore: FirebaseFirestore? = null,
     private val storage: FirebaseStorage? = null,
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+
 ) : ReviewRepository {
 
     override fun currentUid(): String? = auth.currentUser?.uid
@@ -109,23 +110,6 @@ class ReviewRepositoryImpl(
             }
         }
 
-        /** Grava a review em `places/{placeId}/reviews/{id}` e `users/{userId}/reviews/{id}`. */
-
-        private fun reviewPayload(review: Review, cloudUrl: String?): Map<String, Any> {
-            val m = mutableMapOf<String, Any>(
-                "id" to review.id,
-                "placeId" to review.placeId,
-                "userId" to review.userId,
-                "userName" to review.userName,
-                "pastryName" to review.pastryName,
-                "stars" to review.stars,
-                "comment" to review.comment,
-                "createdAt" to review.createdAt
-            )
-            if (cloudUrl != null) m["photoCloudUrl"] = cloudUrl   // só inclui se existir
-            return m
-        }
-
     private suspend fun saveReviewDocs(
         db: FirebaseFirestore,
         review: Review,
@@ -141,7 +125,9 @@ class ReviewRepositoryImpl(
             .collection("reviews")
             .document(review.id)
 
-        val payload = reviewPayload(review, cloudUrl)
+        // 🔁 Review -> DTO -> Map (sem nulos)
+        val dto = review.toRemoteDto(cloudUrl)
+        val payload = dto.toMapNonNull()
 
         val batch = db.batch()
         batch.set(publicRef, payload, SetOptions.merge())
@@ -155,7 +141,6 @@ class ReviewRepositoryImpl(
             throw e
         }
     }
-
         override suspend fun latestReviews(placeId: String): List<Review> =
         reviewDao.latestForPlace(placeId).map { it.toModel() }
 

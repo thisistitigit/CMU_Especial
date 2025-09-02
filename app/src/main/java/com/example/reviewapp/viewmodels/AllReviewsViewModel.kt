@@ -27,13 +27,15 @@ class AllReviewsViewModel @Inject constructor(
 
     fun load(placeId: String) = viewModelScope.launch {
         _state.update { it.copy(isLoading = true, error = null) }
-        val result = runCatching { reviewRepo.allReviews(placeId) }
-        _state.update {
-            it.copy(
-                reviews = result.getOrDefault(emptyList()),
-                isLoading = false,
-                error = result.exceptionOrNull()
-            )
-        }
+
+        // 1) tenta remoto e faz cache
+        runCatching { reviewRepo.refreshPlaceReviews(placeId) }
+            .onFailure { e -> _state.update { s -> s.copy(error = e) } }
+
+        // 2) lê de Room (offline-first)
+        val list = runCatching { reviewRepo.allReviews(placeId) }
+            .getOrDefault(emptyList())
+
+        _state.update { it.copy(reviews = list, isLoading = false) }
     }
 }

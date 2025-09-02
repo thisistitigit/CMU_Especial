@@ -2,6 +2,7 @@ package com.example.reviewapp.viewmodels
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.models.Place
@@ -26,8 +27,8 @@ class DetailsViewModel @Inject constructor(
     data class UiState(
         val place: Place? = null,
         val latestReviews: List<Review> = emptyList(),
-        val internalAvg: Double = 0.0,          // ← NOVO
-        val internalCount: Int = 0,             // ← NOVO
+        val internalAvg: Double = 0.0,
+        val internalCount: Int = 0,
         val isLoading: Boolean = false,
         val error: Throwable? = null
     )
@@ -35,21 +36,18 @@ class DetailsViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
+
     fun load(placeId: String) = viewModelScope.launch {
         _state.update { it.copy(isLoading = true, error = null) }
 
-        val p = runCatching { placeRepo.getDetails(placeId) }
-            .onFailure { e -> _state.update { it.copy(error = e) } }
-            .getOrNull()
-        _state.update { it.copy(place = p) }
+        _state.update { it.copy(place = runCatching { placeRepo.getDetails(placeId) }.getOrNull()) }
 
-        // Top 10 para mostrar na página
-        val latest = runCatching { reviewRepo.latestReviews(placeId) }
-            .getOrDefault(emptyList())
+        runCatching { reviewRepo.refreshPlaceReviews(placeId) }
+            .onFailure { e -> Log.e("DetailsVM", "refreshPlaceReviews falhou", e) }
 
-        // Todas as reviews para calcular estatística correta
-        val all = runCatching { reviewRepo.allReviews(placeId) }
-            .getOrDefault(emptyList())
+        val all = runCatching { reviewRepo.allReviews(placeId) }.getOrDefault(emptyList())
+        val latest = runCatching { reviewRepo.latestReviews(placeId) }.getOrDefault(emptyList())
+
         val count = all.size
         val avg = if (count > 0) all.map { it.stars }.average() else 0.0
 
@@ -62,6 +60,7 @@ class DetailsViewModel @Inject constructor(
             )
         }
     }
+
 
     fun call(phone: String) {
         val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")).apply {

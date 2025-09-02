@@ -6,6 +6,7 @@ import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.locals.ReviewEntity
+import com.example.reviewapp.data.repository.ReviewRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val placeDao: PlaceDao,
-    private val reviewDao: ReviewDao
+    private val reviewDao: ReviewDao,
+    private val reviewRepo: ReviewRepository
 ) : ViewModel() {
 
     enum class Tab { ESTABLISHMENTS, PASTRIES }
@@ -53,10 +55,17 @@ class LeaderboardViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.value = _ui.value.copy(isLoading = true, error = null)
             try {
-                val places = placeDao.listAll()
+                // 1) puxa do Firestore e cacheia no Room
+                runCatching { reviewRepo.refreshAllReviews(maxToFetch = 2000, pageSize = 500) }
+
+                // 2) lê do Room (offline-first)
+                val places  = placeDao.listAll()
                 val reviews = reviewDao.listAll()
-                val est = aggregateEstablishments(places, reviews)
+
+                // 3) agrega
+                val est = aggregateEstablishmentsFromReviews(places, reviews)
                 val pas = aggregatePastries(reviews)
+
                 _ui.value = _ui.value.copy(
                     isLoading = false,
                     establishments = est,
@@ -68,28 +77,30 @@ class LeaderboardViewModel @Inject constructor(
         }
     }
 
+
     fun onSelectTab(tab: Tab) {
         _ui.value = _ui.value.copy(tab = tab)
     }
-
-    private fun aggregateEstablishments(
+    private fun aggregateEstablishmentsFromReviews(
         places: List<PlaceEntity>,
         reviews: List<ReviewEntity>
     ): List<PlaceRow> {
+        val placeById = places.associateBy { it.id }
         val byPlace = reviews.groupBy { it.placeId }
-        val rows = places.mapNotNull { p ->
-            val r = byPlace[p.id].orEmpty()
-            if (r.isEmpty()) return@mapNotNull null // só com avaliação interna
+
+        val rows = byPlace.map { (placeId, r) ->
             val count = r.size
             val avg = r.map { it.stars }.average()
+            val p = placeById[placeId]
             PlaceRow(
-                placeId = p.id,
-                name = p.name,
-                address = p.address,
+                placeId = placeId,
+                name = p?.name ?: "Local $placeId",
+                address = p?.address,
                 avg = avg,
                 count = count
             )
         }
+
         return rows.sortedWith(
             compareByDescending<PlaceRow> { it.avg }
                 .thenByDescending { it.count }

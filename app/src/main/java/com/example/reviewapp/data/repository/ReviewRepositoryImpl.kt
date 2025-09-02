@@ -7,11 +7,16 @@ import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review
-import com.example.reviewapp.data.remote.dto.toMapNonNull
+import com.example.reviewapp.network.dto.ReviewRemoteDto
+import com.example.reviewapp.network.dto.toMapNonNull
 import com.example.reviewapp.network.mappers.toRemoteDto
 import com.example.reviewapp.utils.ReviewRules
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
@@ -115,29 +120,18 @@ class ReviewRepositoryImpl(
         review: Review,
         cloudUrl: String?
     ) {
-        val publicRef = db.collection("places")
-            .document(review.placeId)
-            .collection("reviews")
-            .document(review.id)
-
-        val userRef = db.collection("users")
-            .document(review.userId)
-            .collection("reviews")
-            .document(review.id)
-
-        // 🔁 Review -> DTO -> Map (sem nulos)
-        val dto = review.toRemoteDto(cloudUrl)
-        val payload = dto.toMapNonNull()
-
-        val batch = db.batch()
-        batch.set(publicRef, payload, SetOptions.merge())
-        batch.set(userRef,    payload, SetOptions.merge())
+        val dto = review.toRemoteDto(cloudUrl)        // Review -> DTO
+        val payload = dto.toMapNonNull()              // sem chaves nulas
 
         try {
-            batch.commit().await()
-            Log.d("ReviewRepo", "saveReviewDocs: batch OK (place=${review.placeId}, review=${review.id})")
+            db.collection("reviews")
+                .document(review.id)
+                .set(payload, SetOptions.merge())
+                .await()
+
+            Log.d("ReviewRepo", "saveReviewDocSingle: OK (review=${review.id})")
         } catch (e: Exception) {
-            Log.e("ReviewRepo", "saveReviewDocs: batch FAILED", e)
+            Log.e("ReviewRepo", "saveReviewDocSingle: FAILED", e)
             throw e
         }
     }
@@ -163,6 +157,134 @@ class ReviewRepositoryImpl(
     override suspend fun allReviews(placeId: String): List<Review> =
         reviewDao.allForPlace(placeId).map { it.toModel() }
 
+    // --- QUERY genérica por campo (placeId/userId) ---
+    private fun queryReviewsByField(
+        db: FirebaseFirestore,
+        field: String,
+        value: Any
+    ): Query = db.collection("reviews")
+        .whereEqualTo(field, value)
+        .orderBy("createdAt", Query.Direction.DESCENDING)
+        .limit(50)
+
+    // --- Map: DTO -> Domain ---
+    private fun ReviewRemoteDto.toDomain() =
+      Review(
+            id = id,
+            placeId = placeId,
+            userId = userId,
+            userName = userName,
+            pastryName = pastryName,
+            stars = stars,
+            comment = comment,
+            createdAt = createdAt,
+            photoLocalPath = null,
+            photoCloudUrl = photoCloudUrl
+        )
+
+    private fun QuerySnapshot.toDomainReviews(): List<Review> =
+        documents.mapNotNull { doc ->
+            doc.toObject(ReviewRemoteDto::class.java)
+                ?.toDomain()
+        }
+
+    // --- FETCH genérico do Firestore ---
+    private suspend fun fetchReviewsByFieldFromCloud(
+        db: FirebaseFirestore,
+        field: String,
+        value: Any
+    ): List<Review> {
+        try {
+            val q = queryReviewsByField(db, field, value)
+            val snap = q.get().await()
+            Log.d("ReviewRepo", "fetchReviewsByField: got ${snap.size()} docs for $field=$value")
+
+            val list = snap.toDomainReviews()
+            if (list.isEmpty()) {
+                Log.w("ReviewRepo", "fetchReviewsByField: empty for $field=$value (ok if truly no data)")
+            }
+            return list
+        } catch (e: FirebaseFirestoreException) {
+            if (e.code == FirebaseFirestoreException.Code.FAILED_PRECONDITION) {
+                Log.e(
+                    "ReviewRepo",
+                    "ÍNDICE EM FALTA para '$field' + orderBy('createdAt'). " +
+                            "Cria um índice composto em 'reviews': [$field ASC, createdAt DESC]."
+                )
+            } else {
+                Log.e("ReviewRepo", "Firestore error ($field=$value): ${e.code}", e)
+            }
+            throw e
+        } catch (e: Exception) {
+            Log.e("ReviewRepo", "fetchReviewsByField: generic error ($field=$value)", e)
+            throw e
+        }
+    }
+    // --- Wrappers específicos (usam o genérico) ---
+    override suspend fun refreshPlaceReviews(placeId: String): List<Review> {
+        val db = firestore ?: return reviewDao.allForPlace(placeId).map { it.toModel() }
+        val remote = fetchReviewsByFieldFromCloud(db, "placeId", placeId)
+        if (remote.isNotEmpty()) reviewDao.upsertAll(remote.map { it.toEntity() })
+        return remote
+    }
+
+    override suspend fun refreshUserReviews(uid: String): List<Review> {
+        val db = firestore ?: return reviewDao.history(uid).map { it.toModel() }
+        val remote = fetchReviewsByFieldFromCloud(db, "userId", uid)
+        if (remote.isNotEmpty()) reviewDao.upsertAll(remote.map { it.toEntity() })
+        return remote
+    }
+    override suspend fun refreshAllReviews(maxToFetch: Int, pageSize: Int): Int {
+        val db = firestore ?: return 0
+        var fetched = 0
+        var page = 0
+        var last: DocumentSnapshot? = null
+
+        val base = db.collection("reviews")
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .limit(pageSize.toLong())
+
+        while (fetched < maxToFetch) {
+            val q = if (last == null) base else base.startAfter(last!!)
+            val snap = try {
+                q.get().await()
+            } catch (e: Exception) {
+                Log.e("ReviewRepo", "refreshAllReviews: Firestore GET falhou (page=$page)", e)
+                break
+            }
+
+            if (snap.isEmpty) {
+                Log.d("ReviewRepo", "refreshAllReviews: page=$page vazio, termina")
+                break
+            }
+
+            val batch = snap.documents.mapNotNull { d ->
+                d.toObject(ReviewRemoteDto::class.java)?.let { dto ->
+                    Review(
+                        id = dto.id,
+                        placeId = dto.placeId,
+                        userId = dto.userId,
+                        userName = dto.userName,
+                        pastryName = dto.pastryName,
+                        stars = dto.stars,
+                        comment = dto.comment,
+                        createdAt = dto.createdAt,
+                        photoLocalPath = null,
+                        photoCloudUrl = dto.photoCloudUrl
+                    )
+                }
+            }
+
+            Log.d("ReviewRepo", "refreshAllReviews: page=$page docs=${batch.size}")
+            if (batch.isNotEmpty()) reviewDao.upsertAll(batch.map { it.toEntity() })
+            fetched += batch.size
+            last = snap.documents.last()
+            page++
+        }
+
+        Log.d("ReviewRepo", "refreshAllReviews: total fetched=$fetched")
+        return fetched
+    }
 }
 
 // ---- Mapeadores ----

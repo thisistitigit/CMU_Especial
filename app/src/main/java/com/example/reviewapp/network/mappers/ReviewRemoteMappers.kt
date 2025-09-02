@@ -1,7 +1,7 @@
 package com.example.reviewapp.network.mappers
 
 import com.example.reviewapp.data.models.Review
-import com.example.reviewapp.data.remote.dto.ReviewRemoteDto
+import com.example.reviewapp.network.dto.ReviewRemoteDto
 
 fun Review.toRemoteDto(photoUrl: String?) = ReviewRemoteDto(
     id = id,

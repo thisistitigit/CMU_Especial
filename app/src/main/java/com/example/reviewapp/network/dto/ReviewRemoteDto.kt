@@ -1,16 +1,22 @@
 // ex: com/example/reviewapp/data/remote/dto/ReviewRemoteDto.kt
-package com.example.reviewapp.data.remote.dto
+package com.example.reviewapp.network.dto
 
+import androidx.annotation.Keep
+import com.google.firebase.database.IgnoreExtraProperties
+
+@Keep
+@IgnoreExtraProperties
 data class ReviewRemoteDto(
-    val id: String,
-    val placeId: String,
-    val userId: String,
-    val userName: String,
-    val pastryName: String,
-    val stars: Int,
-    val comment: String,
-    val createdAt: Long,
-    val photoCloudUrl: String? = null
+    var id: String = "",
+    var placeId: String = "",
+    var userId: String = "",
+    var userName: String = "",
+    var pastryName: String = "",
+    var stars: Int = 0,
+    var comment: String = "",
+    var createdAt: Long = 0L,
+    var photoCloudUrl: String? = null
+
 )
 
 // ---- helpers ----

@@ -3,6 +3,7 @@ package com.example.reviewapp
 
 import android.app.Application
 import com.google.firebase.FirebaseApp
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.HiltAndroidApp
 
 @HiltAndroidApp
@@ -24,5 +25,6 @@ class ReviewApp : Application() {
                 com.google.firebase.appcheck.playintegrity.PlayIntegrityAppCheckProviderFactory.getInstance()
             )
         }
+        FirebaseFirestore.setLoggingEnabled(true)
     }
 }

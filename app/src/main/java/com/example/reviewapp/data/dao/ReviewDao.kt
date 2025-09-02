@@ -30,6 +30,9 @@ interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: ReviewEntity)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(items: List<ReviewEntity>)
+
     @Query("SELECT createdAt FROM reviews WHERE userId = :userId ORDER BY createdAt DESC LIMIT 1")
     suspend fun lastCreatedAtByUser(userId: String): Long?
 

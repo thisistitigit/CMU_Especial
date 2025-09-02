@@ -9,6 +9,6 @@ import dagger.hilt.android.HiltAndroidApp
 class ReviewApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        FirebaseApp.initializeApp(this)  // força init
+        FirebaseApp.initializeApp(this) 
     }
 }

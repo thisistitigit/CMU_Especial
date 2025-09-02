@@ -38,8 +38,12 @@ fun LeaderboardScreen(
             )
         }
     ) { inner ->
-        Column(Modifier.padding(inner).fillMaxSize()) {
-
+        Column(
+            modifier = Modifier
+                .padding(inner)
+                .fillMaxSize()
+        ) {
+            // Tabs
             TabRow(selectedTabIndex = state.tab.ordinal) {
                 Tab(
                     selected = state.tab == LeaderboardViewModel.Tab.ESTABLISHMENTS,
@@ -53,28 +57,48 @@ fun LeaderboardScreen(
                 )
             }
 
-            if (state.isLoading) {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            // Conteúdo
+            when {
+                state.isLoading -> {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-                return@Column
-            }
 
-            state.error?.let { err ->
-                Box(Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(text = err, color = MaterialTheme.colorScheme.error)
+                state.error != null -> {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .weight(1f)
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(text = state.error!!, color = MaterialTheme.colorScheme.error)
+                    }
                 }
-            }
 
-            when (state.tab) {
-                LeaderboardViewModel.Tab.ESTABLISHMENTS ->
-                    EstablishmentsList(state.establishments, onPlaceClick)
-                LeaderboardViewModel.Tab.PASTRIES ->
-                    PastriesList(state.pastries)
+                else -> {
+                    when (state.tab) {
+                        LeaderboardViewModel.Tab.ESTABLISHMENTS ->
+                            EstablishmentsList(
+                                items = state.establishments,
+                                onPlaceClick = onPlaceClick
+                            )
+
+                        LeaderboardViewModel.Tab.PASTRIES ->
+                            PastriesList(items = state.pastries)
+                    }
+                }
             }
         }
     }
 }
+
 
 @Composable
 private fun EstablishmentsList(

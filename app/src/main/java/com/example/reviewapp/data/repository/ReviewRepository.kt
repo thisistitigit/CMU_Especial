@@ -11,5 +11,7 @@ interface ReviewRepository {
 
     suspend fun getReview(id: String): Review?
     suspend fun allReviews(placeId: String): List<Review>
+    suspend fun lastReviewAtByUser(userId: String): Long?
+    fun currentUid(): String?
 
 }

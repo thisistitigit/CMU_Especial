@@ -41,6 +41,13 @@ class ReviewFormViewModel @Inject constructor(
 
     /* -------- setters básicos usados pelo ecrã -------- */
 
+
+    fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
+        val uid = reviewRepo.currentUid()
+        val last = uid?.let { reviewRepo.lastReviewAtByUser(it) }
+        _state.update { it.copy(distanceMeters = distanceMeters, lastReviewAt = last) }
+        recompute()
+    }
     fun init(placeId: String, userId: String, userName: String) {
         _state.update { it.copy(placeId = placeId, userId = userId, userName = userName) }
         recompute()
@@ -88,44 +95,35 @@ class ReviewFormViewModel @Inject constructor(
 
     fun submit() = viewModelScope.launch {
         val s = _state.value
-        if (!s.rulesOk || !s.canSubmit) return@launch
+        val uid = reviewRepo.currentUid().orEmpty()
+        if (!s.rulesOk || !s.canSubmit || uid.isBlank()) return@launch
 
         _state.update { it.copy(isSubmitting = true) }
 
         val review = Review(
+            id = java.util.UUID.randomUUID().toString(),
             placeId = s.placeId,
-            userId = s.userId,
+            userId = uid,                          // <- força o uid real
             userName = s.userName,
             pastryName = s.pastryName,
             stars = s.stars,
             comment = s.comment,
             photoLocalPath = s.photoLocalPath,
             photoCloudUrl = s.photoCloudUrl,
-            createdAt = System.currentTimeMillis(),
-            id = java.util.UUID.randomUUID().toString()
+            createdAt = System.currentTimeMillis()
         )
 
         reviewRepo.addReview(review)
 
         _state.update {
             it.copy(
-                pastryName = "",
-                stars = 0,
-                comment = "",
-                photoLocalPath = null,
-                photoCloudUrl = null,
-                isSubmitting = false
+                pastryName = "", stars = 0, comment = "",
+                photoLocalPath = null, photoCloudUrl = null, isSubmitting = false
             )
         }
         recompute()
     }
 
-    fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
-        val uid = _state.value.userId
-        val last = if (uid.isNotBlank()) reviewRepo.history(uid).firstOrNull()?.createdAt else null
-        _state.update { it.copy(distanceMeters = distanceMeters, lastReviewAt = last) }
-        recompute()
-    }
 
     /* -------- lógica de regras e validação -------- */
 

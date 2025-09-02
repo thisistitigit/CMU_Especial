@@ -1,61 +1,122 @@
 package com.example.reviewapp.data.repository
 
+import android.content.ContentValues.TAG
+import android.net.Uri
+import android.util.Log
 import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review
 import com.example.reviewapp.network.api.GooglePlacesApi
 import com.example.reviewapp.utils.ReviewRules
+import com.google.firebase.auth.FirebaseAuth
 // Firebase opcional (sincronização e fotos)
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageMetadata
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class ReviewRepositoryImpl(
     private val reviewDao: ReviewDao,
     private val placeDao: PlaceDao,
 
     private val firestore: FirebaseFirestore? = null,
-    private val storage: FirebaseStorage? = null
+    private val storage: FirebaseStorage? = null,
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ReviewRepository {
 
-    override suspend fun addReview(review: Review) {
-        // 1) Guarda local (Room)
-        reviewDao.upsert(review.toEntity())
+    override fun currentUid(): String? = auth.currentUser?.uid
 
-        // 2) Atualiza agregados locais do Place (avg + count)
-        val place = placeDao.get(review.placeId)
-        if (place != null) {
-            val newCount = place.ratingsCount + 1
-            val newAvg = ((place.avgRating * place.ratingsCount) + review.stars) / newCount.toDouble()
-            placeDao.upsert(
-                place.copy(
-                    avgRating = newAvg,
-                    ratingsCount = newCount
-                )
-            )
+    override suspend fun lastReviewAtByUser(userId: String): Long? =
+        reviewDao.lastCreatedAtByUser(userId)
+
+    override suspend fun addReview(review: Review) {
+        ensureSignedInIfNeeded()
+        val uid = currentUid() ?: review.userId // fallback
+
+        // força consistência do user na review guardada
+        val normalized = review.copy(userId = uid)
+
+        // 1) local
+        reviewDao.upsert(normalized.toEntity())
+
+        // 2) cloud (opcional)
+        val db = firestore
+        val st = storage
+        if (db == null || st == null) return
+
+        val cloudUrl = uploadPhotoIfNeeded(st, normalized)
+        saveReviewDocs(db, normalized, cloudUrl)
+
+        if (cloudUrl != null) {
+            CoroutineScope(Dispatchers.IO).launch {
+                reviewDao.updateCloudUrl(normalized.id, cloudUrl)
+            }
+        }
+    }
+        /** Garante que existe um user autenticado; caso não exista, faz sign-in anónimo. */
+        private suspend fun ensureSignedInIfNeeded() {
+            if (auth.currentUser != null) return
+            try {
+                auth.signInAnonymously().await()
+                Log.d(TAG, "Auth anónima OK: uid=${auth.currentUser?.uid}")
+            } catch (e: Exception) {
+                Log.e(TAG, "Auth anónima falhou", e)
+                // Podes lançar se as tuas regras exigirem auth obrigatória
+                throw e
+            }
         }
 
-        // 3) (Opcional) Sobe a foto para Storage e sincroniza Firestore
-        firestore?.let { db ->
-            val publicRef = db.collection("places").document(review.placeId)
-                .collection("reviews").document(review.id)
-            val userRef = db.collection("users").document(review.userId)
-                .collection("reviews").document(review.id)
-
-            var cloudUrl: String? = review.photoCloudUrl
-            if (cloudUrl == null && review.photoLocalPath != null && storage != null) {
-                val fileRef = storage.reference
-                    .child("images/reviews/${review.placeId}/${review.id}.jpg")
-                // Upload simples (sem await para não bloquear esta função)
-                val uri = android.net.Uri.parse(review.photoLocalPath)
-                fileRef.putFile(uri).addOnSuccessListener {
-                    fileRef.downloadUrl.addOnSuccessListener { u ->
-                        publicRef.update("photoCloudUrl", u.toString())
-                    }
-                }
+        /**
+         * Faz upload da foto para `images/reviews/{placeId}/{reviewId}.jpg` se:
+         *  - existir `photoLocalPath`, e
+         *  - ainda não houver `photoCloudUrl`.
+         * Devolve a URL pública (downloadUrl) ou null se nada foi feito.
+         */
+        private suspend fun uploadPhotoIfNeeded(storage: FirebaseStorage, review: Review): String? {
+            if (review.photoCloudUrl != null) {
+                Log.d(TAG, "uploadPhotoIfNeeded: já tem cloudUrl → skip")
+                return review.photoCloudUrl
+            }
+            val localPath = review.photoLocalPath ?: run {
+                Log.d(TAG, "uploadPhotoIfNeeded: sem photoLocalPath → skip")
+                return null
             }
 
-            val payload = hashMapOf(
+            val fileRef = storage.reference.child("images/reviews/${review.placeId}/${review.id}.jpg")
+            val localUri = Uri.parse(localPath)
+            val metadata = StorageMetadata.Builder()
+                .setContentType("image/jpeg")
+                .build()
+
+            return try {
+                Log.d(TAG, "uploadPhotoIfNeeded: uploading to ${fileRef.path} from=$localUri")
+                fileRef.putFile(localUri, metadata).await()
+                val url = fileRef.downloadUrl.await().toString()
+                Log.d(TAG, "uploadPhotoIfNeeded: downloadUrl=$url")
+                url
+            } catch (e: Exception) {
+                Log.e(TAG, "uploadPhotoIfNeeded: upload failed", e)
+                null // não bloqueia o resto; Firestore será gravado sem a foto
+            }
+        }
+
+        /** Grava a review em `places/{placeId}/reviews/{id}` e `users/{userId}/reviews/{id}`. */
+        private fun saveReviewDocs(db: FirebaseFirestore, review: Review, cloudUrl: String?) {
+            val publicRef = db.collection("places")
+                .document(review.placeId)
+                .collection("reviews")
+                .document(review.id)
+
+            val userRef = db.collection("users")
+                .document(review.userId)
+                .collection("reviews")
+                .document(review.id)
+
+            val payload = mapOf(
                 "id" to review.id,
                 "placeId" to review.placeId,
                 "userId" to review.userId,
@@ -63,27 +124,32 @@ class ReviewRepositoryImpl(
                 "pastryName" to review.pastryName,
                 "stars" to review.stars,
                 "comment" to review.comment,
-                "photoCloudUrl" to cloudUrl,
+                "photoCloudUrl" to cloudUrl,   // pode ser null
                 "createdAt" to review.createdAt
             )
-            publicRef.set(payload)
-            userRef.set(payload)
-        }
-    }
 
-    override suspend fun latestReviews(placeId: String): List<Review> =
+            publicRef.set(payload)
+                .addOnSuccessListener { Log.d(TAG, "saveReviewDocs: publicRef set OK") }
+                .addOnFailureListener { e -> Log.e(TAG, "saveReviewDocs: publicRef set failed", e) }
+
+            userRef.set(payload)
+                .addOnSuccessListener { Log.d(TAG, "saveReviewDocs: userRef set OK") }
+                .addOnFailureListener { e -> Log.e(TAG, "saveReviewDocs: userRef set failed", e) }
+        }
+
+
+        override suspend fun latestReviews(placeId: String): List<Review> =
         reviewDao.latestForPlace(placeId).map { it.toModel() }
 
     override suspend fun history(userId: String): List<Review> =
         reviewDao.history(userId).map { it.toModel() }
 
     override suspend fun canUserReviewHere(userId: String, place: Place, now: Long): Boolean {
-        // Regra temporal (30 min) baseada no último review do utilizador
         val last = reviewDao.history(userId).firstOrNull()?.createdAt
         // Regra de distância (≤ 50 m) deve ser verificada fora (ViewModel) onde tens a localização atual
         // Ex.: val ok = ReviewRules.canReview(distanceMeters, last, now)
         return ReviewRules.canReview(
-            distanceMeters = 0.0,     // TODO: passar distância real medida no ViewModel
+            distanceMeters = 0.0,
             lastReviewAt = last,
             now = now
         )

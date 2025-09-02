@@ -15,8 +15,9 @@ interface ReviewDao {
     suspend fun latestForPlace(placeId: String): List<ReviewEntity>
 
     @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC")
-    suspend fun allForPlace(placeId: String): List<ReviewEntity> // ← NOVO
-
+    suspend fun allForPlace(placeId: String): List<ReviewEntity>
+    @Query("UPDATE reviews SET photoCloudUrl = :url WHERE id = :reviewId")
+    suspend fun updateCloudUrl(reviewId: String, url: String)
     @Query("SELECT * FROM reviews WHERE userId = :userId ORDER BY createdAt DESC")
     suspend fun history(userId: String): List<ReviewEntity>
 
@@ -28,5 +29,9 @@ interface ReviewDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(item: ReviewEntity)
+
+    @Query("SELECT createdAt FROM reviews WHERE userId = :userId ORDER BY createdAt DESC LIMIT 1")
+    suspend fun lastCreatedAtByUser(userId: String): Long?
+
 }
 

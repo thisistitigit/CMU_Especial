@@ -152,4 +152,13 @@
     <string name="review_open_external">Abrir imagem</string>
     <string name="review_photo">Foto da avaliação</string>
     <string name="review_no_photo">Sem foto</string>
+
+    <!-- Histórico -->
+    <string name="history_title">Histórico</string>
+    <string name="history_error_prefix">Erro: %1$s</string>
+
+    <!-- Content descriptions / A11y -->
+    <string name="cd_review_photo">Foto da doçaria</string>
+    <string name="cd_star_icon">Estrela</string>
+    <string name="cd_open_details">Abrir detalhes</string>
     </resources>

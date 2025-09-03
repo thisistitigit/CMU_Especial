@@ -7,10 +7,13 @@ import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.locals.ReviewEntity
 import com.example.reviewapp.data.repository.ReviewRepository
+import com.example.reviewapp.network.mappers.toEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -48,7 +51,7 @@ class LeaderboardViewModel @Inject constructor(
     val ui: StateFlow<UiState> = _ui
 
     init {
-        refresh()
+        observeLeaderboard()
     }
 
     fun refresh() {
@@ -80,6 +83,26 @@ class LeaderboardViewModel @Inject constructor(
 
     fun onSelectTab(tab: Tab) {
         _ui.value = _ui.value.copy(tab = tab)
+    }
+
+    private fun observeLeaderboard() = viewModelScope.launch {
+        _ui.value = _ui.value.copy(isLoading = true, error = null)
+
+        // reviews em tempo-real + places em Flow
+        reviewRepo.streamAllReviews()
+            .combine(placeDao.flowAll()) { reviews, places ->
+                val est = aggregateEstablishmentsFromReviews(places, reviews.map { it.toEntity() })
+                    .map { row -> row } // (podes manter as tuas funções, só ajusta tipos quando preciso)
+                val pas = aggregatePastries(reviews.map { it.toEntity() })
+                UiState(
+                    isLoading = false,
+                    tab = _ui.value.tab,
+                    establishments = est,
+                    pastries = pas
+                )
+            }
+            .catch { e -> _ui.value = _ui.value.copy(isLoading = false, error = e.message) }
+            .collect { state -> _ui.value = state }
     }
     private fun aggregateEstablishmentsFromReviews(
         places: List<PlaceEntity>,

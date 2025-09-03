@@ -15,19 +15,6 @@ object PermissionUtils {
             context, Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
 
-    // Para galeria vamos usar o Photo Picker (não precisa de permissão).
-    // Se quiseres ler ficheiros diretamente (< Android 13), usa esta:
-    fun hasReadImagesPermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.READ_MEDIA_IMAGES
-            ) == PackageManager.PERMISSION_GRANTED
-        } else {
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.READ_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
     fun hasNotificationPermission(context: Context): Boolean {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
@@ -49,7 +36,7 @@ object PermissionUtils {
     }
 
     fun requestNotificationPermission(activity: Activity, requestCode: Int) {
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(
                 activity,
                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),

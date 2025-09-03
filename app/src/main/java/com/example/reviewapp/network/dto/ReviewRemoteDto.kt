@@ -1,4 +1,3 @@
-// ex: com/example/reviewapp/data/remote/dto/ReviewRemoteDto.kt
 package com.example.reviewapp.network.dto
 
 import androidx.annotation.Keep
@@ -9,6 +8,8 @@ import com.google.firebase.database.IgnoreExtraProperties
 data class ReviewRemoteDto(
     var id: String = "",
     var placeId: String = "",
+    var placeName: String = "",
+    var placeAddress: String? = null,
     var userId: String = "",
     var userName: String = "",
     var pastryName: String = "",
@@ -27,6 +28,8 @@ inline fun <K, V : Any> Map<K, V?>.toNonNullMap(): Map<K, V> =
 fun ReviewRemoteDto.toMapNonNull(): Map<String, Any> = mapOf(
     "id" to id,
     "placeId" to placeId,
+    "placeName" to placeName,
+    "placeAddress" to placeAddress,
     "userId" to userId,
     "userName" to userName,
     "pastryName" to pastryName,

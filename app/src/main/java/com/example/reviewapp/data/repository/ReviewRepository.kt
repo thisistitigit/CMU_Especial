@@ -16,5 +16,12 @@ interface ReviewRepository {
     fun currentUid(): String?
     suspend fun refreshAllReviews(maxToFetch: Int = 2000, pageSize: Int = 500): Int
 
+    fun streamPlaceReviews(placeId: String): kotlinx.coroutines.flow.Flow<List<Review>>
+    fun streamAllReviews(): kotlinx.coroutines.flow.Flow<List<Review>>
+
+    fun streamUserHistory(uid: String): kotlinx.coroutines.flow.Flow<List<Review>>
+    fun streamPlaceMetaFromReviews(placeId: String): kotlinx.coroutines.flow.Flow<Place?>
+
+
 
 }

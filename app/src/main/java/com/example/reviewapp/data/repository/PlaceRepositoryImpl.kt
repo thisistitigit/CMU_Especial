@@ -1,15 +1,18 @@
 package com.example.reviewapp.data.repository
 
-import com.example.reviewapp.data.SearchConfig
 import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.enums.PlaceType
-import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.network.api.GooglePlacesApi
+import com.example.reviewapp.network.mappers.toEntity
+import com.example.reviewapp.network.mappers.toModel
 import com.example.reviewapp.network.mappers.toPlaces
+import com.example.reviewapp.utils.TimeUtils
 import com.google.firebase.firestore.FirebaseFirestore
+
 import kotlin.math.cos
 import javax.inject.Named
+import kotlin.text.get
 
 class PlaceRepositoryImpl(
     private val placeDao: PlaceDao,
@@ -73,7 +76,7 @@ class PlaceRepositoryImpl(
             list.take(10).forEachIndexed { i, p ->
             }
 
-            placeDao.upsertAll(list.map { it.toEntity(System.currentTimeMillis()) })
+            placeDao.upsertAll(list.map { it.toEntity(TimeUtils.now()) })
             list
         }.onFailure {
         }.getOrElse { emptyList() }
@@ -88,13 +91,6 @@ class PlaceRepositoryImpl(
         types: Set<PlaceType>
     ): List<Place> = fetchAround(lat, lng, radiusMeters, types)
 
-    override suspend fun searchAround(
-        lat: Double,
-        lng: Double,
-        radiusMeters: Int,
-        types: Set<PlaceType>
-    ): List<Place> = fetchAround(lat, lng, radiusMeters, types)
-
     override suspend fun getDetails(placeId: String): Place {
         placeDao.get(placeId)?.let { return it.toModel() }
         throw NoSuchElementException("Place $placeId não encontrado localmente")
@@ -102,27 +98,13 @@ class PlaceRepositoryImpl(
 
     override suspend fun leaderboard(limit: Int): List<Place> =
         placeDao.leaderboard(limit).map { it.toModel() }
+
+    override suspend fun searchAround(
+        lat: Double,
+        lng: Double,
+        radiusMeters: Int,
+        types: Set<PlaceType>
+    ): List<Place> = fetchAround(lat, lng, radiusMeters, types)
 }
 
-// Room <-> Domain
-private fun PlaceEntity.toModel() = Place(
-    id = id,
-    name = name,
-    category = null,
-    phone = phone,
-    lat = lat, lng = lng,
-    address = address,
-    avgRating = avgRating,
-    ratingsCount = ratingsCount
-)
 
-private fun Place.toEntity(now: Long) = PlaceEntity(
-    id = id,
-    name = name,
-    phone = phone,
-    lat = lat, lng = lng,
-    address = address,
-    avgRating = avgRating,
-    ratingsCount = ratingsCount,
-    lastFetchedAt = now
-)

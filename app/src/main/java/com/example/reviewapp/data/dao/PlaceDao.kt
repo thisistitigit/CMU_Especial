@@ -19,4 +19,12 @@ interface PlaceDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertAll(items: List<PlaceEntity>)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsert(item: PlaceEntity)
     @Query("SELECT * FROM places WHERE id = :id") suspend fun get(id: String): PlaceEntity?
+
+    @Query("SELECT * FROM places")
+    fun flowAll(): kotlinx.coroutines.flow.Flow<List<PlaceEntity>>
+
+    @Query("SELECT * FROM places WHERE id = :id LIMIT 1")
+    fun flowById(id: String): kotlinx.coroutines.flow.Flow<PlaceEntity?>
+
+
 }

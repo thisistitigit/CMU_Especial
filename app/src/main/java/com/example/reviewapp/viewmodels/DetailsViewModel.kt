@@ -2,7 +2,6 @@ package com.example.reviewapp.viewmodels
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.models.Place
@@ -14,8 +13,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
 
 @HiltViewModel
 class DetailsViewModel @Inject constructor(
@@ -40,30 +43,31 @@ class DetailsViewModel @Inject constructor(
     fun load(placeId: String) = viewModelScope.launch {
         _state.update { it.copy(isLoading = true, error = null) }
 
+        // detalhes do local
         _state.update { it.copy(place = runCatching { placeRepo.getDetails(placeId) }.getOrNull()) }
 
-        runCatching { reviewRepo.refreshPlaceReviews(placeId) }
-            .onFailure { e -> Log.e("DetailsVM", "refreshPlaceReviews falhou", e) }
-
-        val all = runCatching { reviewRepo.allReviews(placeId) }.getOrDefault(emptyList())
-        val latest = runCatching { reviewRepo.latestReviews(placeId) }.getOrDefault(emptyList())
-
-        val count = all.size
-        val avg = if (count > 0) all.map { it.stars }.average() else 0.0
-
-        _state.update {
-            it.copy(
-                latestReviews = latest.take(10),
-                internalAvg = avg,
-                internalCount = count,
-                isLoading = false
-            )
-        }
+        // stream em tempo-real das reviews do local (Cloud→Room→UI)
+        reviewRepo.streamPlaceReviews(placeId)
+            .onEach { all ->
+                val latest = all.take(10)
+                val count = all.size
+                val avg = if (count > 0) all.map { it.stars }.average() else 0.0
+                _state.update {
+                    it.copy(
+                        latestReviews = latest,
+                        internalAvg = avg,
+                        internalCount = count,
+                        isLoading = false
+                    )
+                }
+            }
+            .catch { e -> _state.update { it.copy(isLoading = false, error = e) } }
+            .launchIn(this)
     }
 
 
     fun call(phone: String) {
-        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")).apply {
+        val intent = Intent(Intent.ACTION_DIAL, "tel:$phone".toUri()).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         runCatching { appContext.startActivity(intent) }
@@ -72,9 +76,9 @@ class DetailsViewModel @Inject constructor(
     fun openOnMap(lat: Double, lng: Double, label: String?) {
         // geo:lat,lng?q=lat,lng(label)
         val uri = if (label.isNullOrBlank())
-            Uri.parse("geo:$lat,$lng?q=$lat,$lng")
+            "geo:$lat,$lng?q=$lat,$lng".toUri()
         else
-            Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(label)})")
+            "geo:$lat,$lng?q=$lat,$lng(${Uri.encode(label)})".toUri()
 
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -84,7 +88,7 @@ class DetailsViewModel @Inject constructor(
 
     fun getDirections(lat: Double, lng: Double) {
         // Google Maps directions
-        val uri = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$lat,$lng")
+        val uri = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng".toUri()
         val intent = Intent(Intent.ACTION_VIEW, uri).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }

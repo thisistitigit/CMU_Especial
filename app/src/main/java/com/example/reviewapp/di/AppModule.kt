@@ -62,5 +62,5 @@
             firestore: FirebaseFirestore,
             storage: FirebaseStorage
         ): ReviewRepository =
-            ReviewRepositoryImpl(reviewDao, placeDao, firestore, storage)
+            ReviewRepositoryImpl(reviewDao,placeDao, firestore, storage)
     }

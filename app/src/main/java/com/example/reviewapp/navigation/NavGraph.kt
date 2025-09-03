@@ -44,6 +44,7 @@ sealed class Route(val route: String) {
     data object ReviewForm : Route("review/{placeId}") { fun build(id: String) = "review/$id" }
     data object ReviewDetails : Route("reviewDetails/{reviewId}") { fun build(id: String) = "reviewDetails/$id" }
     data object ReviewsAll : Route("reviewsAll/{placeId}") { fun build(id: String) = "reviewsAll/$id" }
+
 }
 
 private val bottomRoutes = setOf(
@@ -198,6 +199,11 @@ fun AppNavGraph(nav: NavHostController) {
                         placeId = placeId,
                         onBack = { nav.popBackStack() },
                         onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) }
+                    )
+                }
+                composable(Route.History.route) {
+                    HistoryScreen(
+                        onOpenPlaceDetails = { id -> nav.navigate(Route.Details.build(id)) }
                     )
                 }
             }

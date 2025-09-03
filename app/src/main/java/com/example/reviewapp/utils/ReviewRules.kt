@@ -2,7 +2,7 @@ package com.example.reviewapp.utils
 
 object ReviewRules {
     private const val MIN_DISTANCE_METERS = 50000.0
-    private const val MIN_INTERVAL_MINUTES = 30L
+    private const val MIN_INTERVAL_MINUTES = 5L//30L
 
     fun canReview(distanceMeters: Double, lastReviewAt: Long?, now: Long): Boolean {
         val okDist = distanceMeters <= MIN_DISTANCE_METERS

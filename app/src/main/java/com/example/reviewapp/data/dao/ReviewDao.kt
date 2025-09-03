@@ -33,8 +33,21 @@ interface ReviewDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(items: List<ReviewEntity>)
 
+    @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC")
+    fun flowForPlace(placeId: String): kotlinx.coroutines.flow.Flow<List<ReviewEntity>>
+
+    @Query("SELECT * FROM reviews")
+    fun flowAll(): kotlinx.coroutines.flow.Flow<List<ReviewEntity>>
+
     @Query("SELECT createdAt FROM reviews WHERE userId = :userId ORDER BY createdAt DESC LIMIT 1")
     suspend fun lastCreatedAtByUser(userId: String): Long?
+
+    @Query("""
+        SELECT * FROM reviews
+        WHERE userId = :uid
+        ORDER BY createdAt DESC
+    """)
+    fun flowHistoryForUser(uid: String): kotlinx.coroutines.flow.Flow<List<ReviewEntity>>
 
 }
 

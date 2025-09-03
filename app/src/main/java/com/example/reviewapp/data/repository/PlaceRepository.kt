@@ -13,15 +13,13 @@ interface PlaceRepository {
         radiusMeters: Int = 5000,
         types: Set<PlaceType> = PlaceType.DEFAULT
     ): List<Place>
+    suspend fun getDetails(placeId: String): Place
+    suspend fun leaderboard(limit: Int = 50): List<Place>
 
-    // 5 km por omissão; abrangente (inclui lojas)
     suspend fun searchAround(
         lat: Double,
         lng: Double,
         radiusMeters: Int = 5000,
         types: Set<PlaceType> = PlaceType.DEFAULT
     ): List<Place>
-
-    suspend fun getDetails(placeId: String): Place
-    suspend fun leaderboard(limit: Int = 50): List<Place>
 }

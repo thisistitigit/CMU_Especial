@@ -182,6 +182,7 @@
     <string name="field_pastry">Doçaria</string>
     <string name="field_comment">Comentário</string>
     <string name="action_take_photo">Tirar foto</string>
+    <string name="action_remove_photo">Remover foto</string>
     <string name="action_pick_gallery">Escolher da galeria</string>
     <string name="action_submit">Submeter</string>
     <string name="action_cancel">Cancelar</string>
@@ -230,4 +231,5 @@
     <string name="location_modal_action_allow_always_open_settings">Abrir Definições para “Permitir sempre”</string>
     <string name="location_modal_open_settings">Abrir Definições</string>
     <string name="location_modal_not_now">Agora não</string>
+
     </resources>

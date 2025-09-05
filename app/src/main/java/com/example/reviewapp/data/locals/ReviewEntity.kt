@@ -11,6 +11,8 @@ import androidx.room.PrimaryKey
 data class ReviewEntity(
     @PrimaryKey val id: String,
     val placeId: String,
+    val placeName: String?,
+    val placeAddress: String?,
     val userId: String,
     val userName: String,
     val pastryName: String,

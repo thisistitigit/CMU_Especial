@@ -8,9 +8,11 @@ data class Review(
     val userId: String,
     val userName: String,
     val pastryName: String,
-    val stars: Int,              // 1..5
+    val stars: Int,
     val comment: String,
-    val photoLocalPath: String?, // privada no device
-    val photoCloudUrl: String?,  // opcional (público)
-    val createdAt: Long          // epoch millis
+    val photoLocalPath: String?,
+    val photoCloudUrl: String?,
+    val createdAt: Long,
+    val placeName: String? = null,
+    val placeAddress: String? = null,
 )

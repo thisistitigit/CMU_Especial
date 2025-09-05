@@ -2,9 +2,7 @@ package com.example.reviewapp.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
-import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.locals.ReviewEntity
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.network.mappers.toEntity
@@ -13,12 +11,11 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
-    private val placeDao: PlaceDao,
     private val reviewDao: ReviewDao,
     private val reviewRepo: ReviewRepository
 ) : ViewModel() {
@@ -50,75 +47,77 @@ class LeaderboardViewModel @Inject constructor(
     private val _ui = MutableStateFlow(UiState())
     val ui: StateFlow<UiState> = _ui
 
-    init {
-        observeLeaderboard()
-    }
+    init { observeLeaderboard() }
 
     fun refresh() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(isLoading = true, error = null)
-            try {
-                // 1) puxa do Firestore e cacheia no Room
-                runCatching { reviewRepo.refreshAllReviews(maxToFetch = 2000, pageSize = 500) }
+            runCatching {
+                // puxa do Firestore e cacheia no Room
+                reviewRepo.refreshAllReviews(maxToFetch = 2000, pageSize = 500)
 
-                // 2) lê do Room (offline-first)
-                val places  = placeDao.listAll()
+                // lê do Room e agrega
                 val reviews = reviewDao.listAll()
-
-                // 3) agrega
-                val est = aggregateEstablishmentsFromReviews(places, reviews)
-                val pas = aggregatePastries(reviews)
-
                 _ui.value = _ui.value.copy(
                     isLoading = false,
-                    establishments = est,
-                    pastries = pas
+                    establishments = aggregateEstablishmentsFromReviews(reviews),
+                    pastries = aggregatePastries(reviews)
                 )
-            } catch (e: Exception) {
+            }.onFailure { e ->
                 _ui.value = _ui.value.copy(isLoading = false, error = e.message)
             }
         }
     }
 
-
-    fun onSelectTab(tab: Tab) {
-        _ui.value = _ui.value.copy(tab = tab)
-    }
+    fun onSelectTab(tab: Tab) { _ui.value = _ui.value.copy(tab = tab) }
 
     private fun observeLeaderboard() = viewModelScope.launch {
         _ui.value = _ui.value.copy(isLoading = true, error = null)
 
-        // reviews em tempo-real + places em Flow
         reviewRepo.streamAllReviews()
-            .combine(placeDao.flowAll()) { reviews, places ->
-                val est = aggregateEstablishmentsFromReviews(places, reviews.map { it.toEntity() })
-                    .map { row -> row } // (podes manter as tuas funções, só ajusta tipos quando preciso)
-                val pas = aggregatePastries(reviews.map { it.toEntity() })
+            .map { reviews ->
+                val entities = reviews.map { it.toEntity() }
                 UiState(
                     isLoading = false,
                     tab = _ui.value.tab,
-                    establishments = est,
-                    pastries = pas
+                    establishments = aggregateEstablishmentsFromReviews(entities),
+                    pastries = aggregatePastries(entities)
                 )
             }
             .catch { e -> _ui.value = _ui.value.copy(isLoading = false, error = e.message) }
             .collect { state -> _ui.value = state }
     }
+
+    // ---- Aggregations (só com reviews) ----
+
     private fun aggregateEstablishmentsFromReviews(
-        places: List<PlaceEntity>,
         reviews: List<ReviewEntity>
     ): List<PlaceRow> {
-        val placeById = places.associateBy { it.id }
-        val byPlace = reviews.groupBy { it.placeId }
+        val byPlace = reviews.groupBy { it.placeId.trim() }
 
-        val rows = byPlace.map { (placeId, r) ->
-            val count = r.size
-            val avg = r.map { it.stars }.average()
-            val p = placeById[placeId]
+        fun latestNonEmptyName(rs: List<ReviewEntity>): String? =
+            rs.asSequence()
+                .sortedByDescending { it.createdAt }
+                .mapNotNull { it.placeName?.trim() }
+                .firstOrNull { it.isNotEmpty() }
+
+        fun latestAddress(rs: List<ReviewEntity>): String? =
+            rs.asSequence()
+                .sortedByDescending { it.createdAt }
+                .mapNotNull { it.placeAddress?.trim() }
+                .firstOrNull { it.isNotEmpty() }
+
+        val rows = byPlace.map { (placeId, rs) ->
+            val count = rs.size
+            val avg = rs.map { it.stars }.average()
+
+            val name = latestNonEmptyName(rs) ?: latestAddress(rs) ?: "—"
+            val address = latestAddress(rs)
+
             PlaceRow(
                 placeId = placeId,
-                name = p?.name ?: "Local $placeId",
-                address = p?.address,
+                name = name,
+                address = address,
                 avg = avg,
                 count = count
             )

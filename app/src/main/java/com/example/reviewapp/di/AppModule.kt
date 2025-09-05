@@ -5,6 +5,7 @@
     import androidx.room.Room
     import com.example.reviewapp.R
     import com.example.reviewapp.data.AppDatabase
+    import com.example.reviewapp.data.MIGRATION_1_2
     import com.example.reviewapp.data.dao.PlaceDao
     import com.example.reviewapp.data.dao.ReviewDao
     import com.example.reviewapp.data.repository.PlaceRepository
@@ -30,7 +31,9 @@
         // Room
         @Provides @Singleton
         fun provideDb(@ApplicationContext ctx: Context): AppDatabase =
-            Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db").build()
+            Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db")
+                .addMigrations(MIGRATION_1_2)   // ⬅️ adiciona todas as migrações necessárias
+                .build()
 
         @Provides fun providePlaceDao(db: AppDatabase): PlaceDao = db.placeDao()
         @Provides fun provideReviewDao(db: AppDatabase): ReviewDao = db.reviewDao()

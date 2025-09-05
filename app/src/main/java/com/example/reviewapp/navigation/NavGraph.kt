@@ -1,6 +1,8 @@
 package com.example.reviewapp.navigation
 
 
+import android.net.Uri
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -40,8 +42,9 @@ sealed class Route(val route: String) {
     data object History    : Route("history")
     data object Profile    : Route("profile")
 
-    data object Details    : Route("details/{placeId}") { fun build(id: String) = "details/$id" }
-    data object ReviewForm : Route("review/{placeId}") { fun build(id: String) = "review/$id" }
+    data object Details : Route("details/{placeId}") {
+        fun build(id: String) = "details/${Uri.encode(id)}"
+    }    data object ReviewForm : Route("review/{placeId}") { fun build(id: String) = "review/$id" }
     data object ReviewDetails : Route("reviewDetails/{reviewId}") { fun build(id: String) = "reviewDetails/$id" }
     data object ReviewsAll : Route("reviewsAll/{placeId}") { fun build(id: String) = "reviewsAll/$id" }
 
@@ -160,7 +163,11 @@ fun AppNavGraph(nav: NavHostController) {
                     route = Route.Details.route,
                     arguments = listOf(navArgument("placeId") { type = NavType.StringType })
                 ) { back ->
-                    val placeId = back.arguments?.getString("placeId").orEmpty()
+                    val raw = back.arguments?.getString("placeId")
+                    Log.d("DetailsNav", "arg placeId (raw) = '$raw'")
+                    val placeId = Uri.decode(raw ?: "").trim()
+                    Log.d("DetailsNav", "arg placeId (decoded) = '$placeId'")
+
                     DetailsScreen(
                         placeId = placeId,
                         onBack = { nav.popBackStack() },

@@ -31,9 +31,11 @@ import kotlinx.coroutines.tasks.await
 import androidx.core.net.toUri
 import com.example.reviewapp.core.ext.requireSignedInUid
 import com.example.reviewapp.data.dao.PlaceDao
+import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.network.dto.ReviewRemoteDto
 import com.example.reviewapp.network.mappers.toEntity
 import com.example.reviewapp.network.mappers.toModel
+import com.example.reviewapp.utils.ReviewRules
 import com.google.firebase.firestore.Query
 
 class ReviewRepositoryImpl(
@@ -92,13 +94,13 @@ class ReviewRepositoryImpl(
         }.getOrNull()
     }
 
-
+/**
     private suspend fun saveReviewDocs(
         db: FirebaseFirestore,
         review: Review,
         cloudUrl: String?
     ) {
-        // tenta obter meta do local do Room (já foi cacheado noutros ecrãs)
+        // tenta obter meta do local do Room
         val pe = placeDao.get(review.placeId)
         val dto = review.toRemoteDto(
             photoUrl = cloudUrl,
@@ -106,6 +108,37 @@ class ReviewRepositoryImpl(
             placeAddress = pe?.address
         )
         val payload = dto.toMapNonNull()
+
+        db.reviewsCollection()
+            .document(review.id)
+            .set(payload, SetOptions.merge())
+            .await()
+    }
+*/
+    private suspend fun saveReviewDocs(
+        db: FirebaseFirestore,
+        review: Review,
+        cloudUrl: String?
+    ) {
+        // fallback suave para nome/morada caso a review não traga
+        val pe      = placeDao.get(review.placeId)
+        val name    = review.placeName?.takeIf { it.isNotBlank() } ?: pe?.name ?: ""
+        val address = review.placeAddress ?: pe?.address
+        val photo   = cloudUrl ?: review.photoCloudUrl
+
+        val payload = buildMap<String, Any> {
+            put("id", review.id)
+            put("placeId", review.placeId)
+            put("placeName", name)
+            address?.let { put("placeAddress", it) }
+            put("userId", review.userId)
+            put("userName", review.userName)
+            put("pastryName", review.pastryName)
+            put("stars", review.stars)
+            put("comment", review.comment)
+            put("createdAt", review.createdAt)
+            photo?.let { put("photoCloudUrl", it) }
+        }
 
         db.reviewsCollection()
             .document(review.id)
@@ -122,8 +155,8 @@ class ReviewRepositoryImpl(
 
     override suspend fun canUserReviewHere(userId: String, place: Place, now: Long): Boolean {
         val last = reviewDao.history(userId).firstOrNull()?.createdAt
-        return com.example.reviewapp.utils.ReviewRules.canReview(
-            distanceMeters = 0.0, // regra de distância tratada fora
+        return ReviewRules.canReview(
+            distanceMeters = 0.0,
             lastReviewAt = last,
             now = now
         )
@@ -199,6 +232,7 @@ class ReviewRepositoryImpl(
         remoteJob?.cancel()
     }
 
+
     override fun streamPlaceMetaFromReviews(placeId: String): Flow<Place?> = callbackFlow {
         val db = firestore
         if (db == null) {
@@ -233,7 +267,6 @@ class ReviewRepositoryImpl(
                         ratingsCount = 0
                     )
                 }
-
                 // envia para o flow (ignora se o collector estiver lento/cancelado)
                 trySend(place)
             }

@@ -26,5 +26,19 @@ interface PlaceDao {
     @Query("SELECT * FROM places WHERE id = :id LIMIT 1")
     fun flowById(id: String): kotlinx.coroutines.flow.Flow<PlaceEntity?>
 
+    @Query("SELECT name FROM places WHERE id = :id LIMIT 1")
+    suspend fun getNameById(id: String): String?
+
+    @Query("SELECT * FROM places WHERE LOWER(name) = LOWER(:name) LIMIT 1")
+    suspend fun getByName(name: String): PlaceEntity?
+
+    data class IdNameAddr(
+        val id: String,
+        val name: String,
+        val address: String?
+    )
+
+    @Query("SELECT id, name, address FROM places WHERE id IN (:ids)")
+    suspend fun getNamesAndAddressesByIds(ids: List<String>): List<IdNameAddr>
 
 }

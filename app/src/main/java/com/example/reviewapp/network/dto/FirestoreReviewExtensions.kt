@@ -2,7 +2,6 @@ package com.example.reviewapp.network.dto
 
 import android.util.Log
 import com.example.reviewapp.data.models.Review
-import com.example.reviewapp.network.dto.ReviewRemoteDto
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
@@ -10,7 +9,7 @@ import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import kotlinx.coroutines.tasks.await
 
-private const val TAG = "ReviewRepo" // só para logs deste ficheiro
+private const val TAG = "ReviewRepo"
 
 fun FirebaseFirestore.reviewsCollection() =
     collection("reviews")
@@ -29,7 +28,9 @@ fun QuerySnapshot.toReviews(): List<Review> =
         d.toObject(ReviewRemoteDto::class.java)?.let { dto ->
             Review(
                 id = dto.id,
-                placeId = dto.placeId,
+                placeId = dto.placeId.trim(),
+                placeName = dto.placeName.ifBlank { null },   // NOVO
+                placeAddress = dto.placeAddress,               // NOVO
                 userId = dto.userId,
                 userName = dto.userName,
                 pastryName = dto.pastryName,

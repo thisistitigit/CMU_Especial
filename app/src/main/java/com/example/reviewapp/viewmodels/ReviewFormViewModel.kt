@@ -43,8 +43,8 @@ class ReviewFormViewModel @Inject constructor(
 
 
     fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
-        val uid = reviewRepo.currentUid()
-        val last = uid?.let { reviewRepo.lastReviewAtByUser(it) }
+        val uid = _state.value.userId
+        val last = if (uid.isNotBlank()) reviewRepo.lastReviewAtByUser(uid) else null
         _state.update { it.copy(distanceMeters = distanceMeters, lastReviewAt = last) }
         recompute()
     }
@@ -78,16 +78,6 @@ class ReviewFormViewModel @Inject constructor(
         recompute()
     }
 
-    /* -------- ações (no-ops seguros para já) -------- */
-
-    fun capturePhoto() {
-        // Normalmente isto dispara um evento para a UI abrir CameraX.
-        // Mantemos no-op para não rebentar compilação.
-    }
-
-    fun pickPhoto() {
-        // Normalmente isto dispara um picker na UI.
-    }
 
     fun setPhotoLocalPath(path: String?) {
         _state.update { it.copy(photoLocalPath = path) }
@@ -95,7 +85,7 @@ class ReviewFormViewModel @Inject constructor(
 
     fun submit() = viewModelScope.launch {
         val s = _state.value
-        val uid = reviewRepo.currentUid().orEmpty()
+        val uid = s.userId
         if (!s.rulesOk || !s.canSubmit || uid.isBlank()) return@launch
 
         _state.update { it.copy(isSubmitting = true) }
@@ -131,11 +121,10 @@ class ReviewFormViewModel @Inject constructor(
         val s = _state.value
         val now = System.currentTimeMillis()
         val dist = s.distanceMeters
-        val rulesOk = if (dist == null) {
-            false
-        } else {
-            ReviewRules.canReview(dist, s.lastReviewAt, now)
-        }
+        val rulesOk =
+        if (dist == null) false
+        else ReviewRules.canReview(dist, s.lastReviewAt, now)
+
         val canSubmit = s.pastryName.isNotBlank() && s.stars in 1..5 && s.comment.isNotBlank()
         _state.update { it.copy(rulesOk = rulesOk, canSubmit = canSubmit) }
     }

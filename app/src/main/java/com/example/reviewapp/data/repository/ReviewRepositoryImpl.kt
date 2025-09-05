@@ -4,7 +4,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import android.content.ContentValues.TAG
-import android.system.Os.close
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review

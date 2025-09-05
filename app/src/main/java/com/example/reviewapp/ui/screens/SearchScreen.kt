@@ -150,13 +150,6 @@ fun SearchScreen(
     ) { padding ->
         Column(Modifier.padding(padding)) {
 
-            if (!perm.isGranted) {
-                PermissionBanner(
-                    showRationale = perm.showRationale,
-                    onRequest = perm.ask,
-                    onOpenSettings = perm.openSettings
-                )
-            }
 
             // ====== MAPA + interação de arrasto ======
             val cameraPositionState = rememberCameraPositionState {

@@ -94,6 +94,46 @@
     <string name="action_my_location">Minha localização</string>
 
 
+    <!-- Títulos -->
+    <string name="auth_title_register">Criar conta</string>
+    <string name="auth_title_login">Entrar</string>
+    <string name="profile_title">Perfil do Utilizador</string>
+
+    <!-- Campos -->
+    <string name="field_username_unique">Username (único)</string>
+    <string name="field_email">Email</string>
+    <string name="field_password">Palavra-passe</string>
+    <string name="field_confirm_password">Confirmar palavra-passe</string>
+
+    <!-- Ações / Botões -->
+    <string name="action_show">Mostrar</string>
+    <string name="action_hide">Ocultar</string>
+    <string name="action_create_account">Criar conta</string>
+    <string name="action_sign_in">Entrar</string>
+    <string name="action_have_account">Já tenho conta</string>
+    <string name="action_logout">Logout</string>
+
+    <!-- Estados -->
+    <string name="status_registering">A registar...</string>
+    <string name="status_signing_in">A entrar...</string>
+
+    <!-- Labels -->
+    <string name="label_username">Username:</string>
+    <string name="label_email">Email:</string>
+    <string name="label_error">Erro:</string>
+    <string name="placeholder_na">Não disponível</string>
+
+    <!-- Erros (UI mapeia códigos → mensagens) -->
+    <string name="error_passwords_mismatch">As palavras-passe não coincidem.</string>
+    <string name="error_username_invalid">Username inválido. Usa 3–20 carateres: a–z, 0–9 ou _.</string>
+    <string name="error_username_taken">Esse username já existe.</string>
+    <string name="error_register_failed">Falha no registo. Tenta novamente.</string>
+    <string name="error_profile_create_failed">Falha ao criar o perfil.</string>
+    <string name="error_not_authenticated_after_register">Utilizador não autenticado após registo.</string>
+    <string name="error_not_authenticated">Não autenticado.</string>
+    <string name="error_login_failed">Falha ao entrar. Tenta novamente.</string>
+    <string name="error_generic">Ocorreu um erro. Tenta novamente.</string>
+
     <!-- Home -->
     <string name="home_title">Pastelarias &amp; Doçaria</string>
     <string name="home_empty">Ainda não há resultados por aqui.</string>
@@ -161,4 +201,33 @@
     <string name="cd_review_photo">Foto da doçaria</string>
     <string name="cd_star_icon">Estrela</string>
     <string name="cd_open_details">Abrir detalhes</string>
+
+
+    <!-- Modal de localização -->
+    <string name="location_modal_title">Ativar acesso à localização (1.º e 2.º plano)</string>
+
+    <!-- Primeiro passo: foreground -->
+    <string name="location_modal_body_fg">
+        Passo 1 — Autoriza a localização **em primeiro plano** (“Enquanto a app é utilizada”).
+        Isto permite calcular distância e mostrar resultados perto de ti.
+        De seguida, será necessário ativar o acesso em segundo plano.
+    </string>
+
+    <!-- Segundo passo: background / permitir sempre -->
+    <string name="location_modal_body_bg">
+        Obrigatório para notificações de proximidade e geofencing: ativa a localização
+        **em segundo plano** (“Permitir sempre”). Sem esta permissão a app não consegue
+        alertar-te quando te aproximas de um estabelecimento com reviews, mesmo com a app fechada.
+    </string>
+
+    <!-- Caminho técnico nas definições -->
+    <string name="location_modal_hint_path">
+        Caminho: Definições da aplicação → Permissões → Localização → Permitir sempre
+    </string>
+
+    <!-- Ações -->
+    <string name="location_modal_action_allow_while_using">Autorizar localização (1.º plano)</string>
+    <string name="location_modal_action_allow_always_open_settings">Abrir Definições para “Permitir sempre”</string>
+    <string name="location_modal_open_settings">Abrir Definições</string>
+    <string name="location_modal_not_now">Agora não</string>
     </resources>

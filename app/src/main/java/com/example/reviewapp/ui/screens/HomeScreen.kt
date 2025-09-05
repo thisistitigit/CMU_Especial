@@ -1,4 +1,3 @@
-// com/example/reviewapp/ui/screens/HomeScreen.kt
 package com.example.reviewapp.ui.screens
 
 import android.content.Context
@@ -19,12 +18,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.LocationPermissionGate
+import com.example.reviewapp.ui.components.PlaceHorizontalSection
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.model.LatLng
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.example.reviewapp.ui.components.PlaceHorizontalSection
 
 private enum class HomeSort { Rating }
 
@@ -37,16 +37,25 @@ fun HomeScreen(
     onOpenProfile: () -> Unit
 ) {
     val ui by vm.state.collectAsState()
-    var sort by remember { mutableStateOf(HomeSort.Rating) }
 
+    var sort by remember { mutableStateOf(HomeSort.Rating) }
     var query by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
-    var showingSearch by remember { mutableStateOf(false) }   // << controla que secção mostrar
+    var showingSearch by remember { mutableStateOf(false) }
+
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
-    // mantém “perto de mim” atualizado ao entrar
-    LaunchedEffect(Unit) { vm.refreshNearMe() }
+    // ⚠️ Removemos o antigo LaunchedEffect(Unit) { vm.refreshNearMe() }
+    // para só arrancar "perto de mim" depois das permissões.
+
+    // --- Gate de permissões (mostra modal e trata FG/BG). Quando tudo ok, atualiza "perto de mim".
+    LocationPermissionGate(
+        autoShowIfNeeded = true,
+        onAllGranted = {
+            vm.refreshNearMe()
+        }
+    )
 
     // se o utilizador limpar o texto, voltamos às sugestões
     LaunchedEffect(query, isSearching) {
@@ -66,7 +75,10 @@ fun HomeScreen(
                         trailingIcon = {
                             if (query.isNotBlank()) {
                                 IconButton(onClick = { query = ""; showingSearch = false }) {
-                                    Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.action_clear))
+                                    Icon(
+                                        Icons.Filled.Clear,
+                                        contentDescription = stringResource(R.string.action_clear)
+                                    )
                                 }
                             }
                         },
@@ -80,7 +92,7 @@ fun HomeScreen(
                                     isSearching = false
                                     if (latLng != null) {
                                         vm.refreshAt(latLng)
-                                        showingSearch = true         // << ativa resultados no lugar das sugestões
+                                        showingSearch = true
                                     }
                                 }
                             }
@@ -104,7 +116,10 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(R.string.home_sort_label), style = MaterialTheme.typography.labelLarge)
+                Text(
+                    stringResource(R.string.home_sort_label),
+                    style = MaterialTheme.typography.labelLarge
+                )
                 Spacer(Modifier.width(12.dp))
                 AssistChip(
                     onClick = { sort = HomeSort.Rating },
@@ -116,7 +131,6 @@ fun HomeScreen(
                 }
             }
 
-            // erro “totalmente vazio”
             if (ui.error != null && ui.places.isEmpty() && ui.nearMePlaces.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.home_error))
@@ -124,12 +138,10 @@ fun HomeScreen(
                 return@Column
             }
 
-            // listas ordenadas
             val nearOrdered = ui.nearMePlaces.sortedByDescending { it.avgRating }
             val searchOrdered = ui.places.sortedByDescending { it.avgRating }
 
             if (showingSearch) {
-                // ---- MOSTRAR APENAS RESULTADOS DA PESQUISA ----
                 if (searchOrdered.isNotEmpty()) {
                     PlaceHorizontalSection(
                         title = stringResource(R.string.home_search_results_title),
@@ -139,13 +151,11 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
-                    // se não há resultados, mostra placeholder de vazio
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(stringResource(R.string.home_empty))
                     }
                 }
             } else {
-                // ---- MOSTRAR APENAS “PERTO DE SI” ----
                 if (nearOrdered.isNotEmpty()) {
                     PlaceHorizontalSection(
                         title = stringResource(R.string.home_suggestions_title),

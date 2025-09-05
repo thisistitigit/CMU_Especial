@@ -9,6 +9,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -29,13 +30,14 @@ fun rememberLocationPermissionState(
     val context = LocalContext.current
     val activity = context as? Activity
 
-    fun checkGranted(): Boolean {
+    fun isGranted(): Boolean {
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarse = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
     }
 
-    var granted by remember { mutableStateOf(false) }
+    var granted by rememberSaveable { mutableStateOf(isGranted()) }
+
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { res ->
@@ -44,10 +46,13 @@ fun rememberLocationPermissionState(
         if (granted) onGranted()
     }
 
-    // primeiro check / pedido
+    val canAskAgain = activity?.let {
+        ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
+    } ?: false
+
     LaunchedEffect(Unit) {
-        granted = checkGranted()
-        if (!granted && autoRequestOnStart) {
+        granted = isGranted()
+        if (!granted && autoRequestOnStart && canAskAgain) {
             launcher.launch(arrayOf(
                 Manifest.permission.ACCESS_FINE_LOCATION,
                 Manifest.permission.ACCESS_COARSE_LOCATION
@@ -57,31 +62,40 @@ fun rememberLocationPermissionState(
         }
     }
 
-    val showRationale = !granted && activity?.let {
-        ActivityCompat.shouldShowRequestPermissionRationale(it, Manifest.permission.ACCESS_FINE_LOCATION)
-    } == true
+    val ask: () -> Unit = ask@{
+        if (isGranted()) return@ask  // <- early return correto
 
-    val ask: () -> Unit = {
-        launcher.launch(arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ))
+        if (canAskAgain) {
+            launcher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        } else {
+            // Negado com "Não voltar a perguntar" → abrir definições
+            val intent = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                Uri.fromParts("package", context.packageName, null)
+            )
+            context.startActivity(intent)
+        }
     }
 
+
     val openSettings: () -> Unit = {
-        val intent = Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            Uri.fromParts("package", context.packageName, null)
-        )
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null))
         context.startActivity(intent)
     }
 
-    return remember(granted, showRationale) {
+    return remember(granted, canAskAgain) {
         LocationPermissionState(
             isGranted = granted,
-            showRationale = showRationale,
+            showRationale = !granted && canAskAgain,
             ask = ask,
             openSettings = openSettings
         )
     }
 }
+

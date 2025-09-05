@@ -1,7 +1,8 @@
-// app/src/main/java/com/example/reviewapp/di/GeofenceReceiverEntryPoint.kt
+// di/GeofenceReceiverEntryPoint.kt
 package com.example.reviewapp.di
 
 import com.example.reviewapp.data.dao.PlaceDao
+import com.example.reviewapp.geofence.GeofenceRegistrar
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -10,4 +11,5 @@ import dagger.hilt.components.SingletonComponent
 @InstallIn(SingletonComponent::class)
 interface GeofenceReceiverEntryPoint {
     fun placeDao(): PlaceDao
+    fun geofenceRegistrar(): GeofenceRegistrar
 }

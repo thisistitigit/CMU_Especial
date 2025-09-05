@@ -1,9 +1,6 @@
 // RegisterScreen.kt
 package com.example.reviewapp.ui.screens
 
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -12,15 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.AuthViewModel
-import com.google.android.gms.auth.api.signin.GoogleSignIn
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions
-import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun RegisterScreen(
@@ -29,63 +24,35 @@ fun RegisterScreen(
     onGoLogin: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var pass2 by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var errorCode by remember { mutableStateOf<String?>(null) }
 
-    val context = LocalContext.current
-
-    val googleLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { res ->
-        val task = GoogleSignIn.getSignedInAccountFromIntent(res.data)
-        try {
-            val account = task.result
-            val idToken = account.idToken
-            if (idToken.isNullOrBlank()) {
-                error = "Não foi possível obter o token Google."
-                return@rememberLauncherForActivityResult
-            }
-            loading = true; error = null
-            vm.signInWithGoogle(idToken) { ok, err ->
-                loading = false
-                if (ok) onRegisterSuccess() else error = toFriendlyGoogleError(err)
-            }
-        } catch (e: ApiException) {
-            Log.e("Auth", "Google sign-in failed: ${e.statusCode}", e)
-            error = when (e.statusCode) {
-                10 -> "Configuração inválida (SHA-1/JSON)."
-                12501 -> "Login cancelado."
-                12500 -> "Falha no login Google. Tenta novamente."
-                else -> e.localizedMessage ?: "Falha no login Google."
-            }
-        } catch (t: Throwable) {
-            error = t.localizedMessage ?: "Falha inesperada no Google Sign-In."
-        }
-    }
-
-    fun startGoogle() {
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken(context.getString(com.example.reviewapp.R.string.default_web_client_id))
-            .requestEmail()
-            .build()
-        val client = GoogleSignIn.getClient(context, gso)
-        googleLauncher.launch(client.signInIntent)
-    }
+    val usernameRegex = Regex("^[a-z0-9_]{3,20}$")
+    val passOk = pass.length >= 6 && pass == pass2
+    val usernameOk = usernameRegex.matches(username.trim().lowercase())
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Criar conta", style = MaterialTheme.typography.headlineMedium)
+        Text(stringResource(R.string.auth_title_register), style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(24.dp))
 
         OutlinedTextField(
+            value = username, onValueChange = { username = it },
+            label = { Text(stringResource(R.string.field_username_unique)) },
+            singleLine = true, modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(12.dp))
+
+        OutlinedTextField(
             value = email, onValueChange = { email = it },
-            label = { Text("Email") },
+            label = { Text(stringResource(R.string.field_email)) },
             leadingIcon = { Icon(Icons.Default.Email, null) },
             singleLine = true, modifier = Modifier.fillMaxWidth()
         )
@@ -93,11 +60,11 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = pass, onValueChange = { pass = it },
-            label = { Text("Palavra-passe") },
+            label = { Text(stringResource(R.string.field_password)) },
             leadingIcon = { Icon(Icons.Default.Lock, null) },
             trailingIcon = {
                 TextButton(onClick = { showPass = !showPass }) {
-                    Text(if (showPass) "Ocultar" else "Mostrar")
+                    Text(if (showPass) stringResource(R.string.action_hide) else stringResource(R.string.action_show))
                 }
             },
             singleLine = true,
@@ -108,7 +75,7 @@ fun RegisterScreen(
 
         OutlinedTextField(
             value = pass2, onValueChange = { pass2 = it },
-            label = { Text("Confirmar palavra-passe") },
+            label = { Text(stringResource(R.string.field_confirm_password)) },
             leadingIcon = { Icon(Icons.Default.Lock, null) },
             singleLine = true,
             visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
@@ -116,51 +83,41 @@ fun RegisterScreen(
         )
 
         Spacer(Modifier.height(8.dp))
-        if (error != null) {
-            Text(error!!, color = MaterialTheme.colorScheme.error)
+        errorCode?.let { code ->
+            Text(
+                text = when (code) {
+                    "passwords_mismatch" -> stringResource(R.string.error_passwords_mismatch)
+                    "invalid_username" -> stringResource(R.string.error_username_invalid)
+                    "username_taken" -> stringResource(R.string.error_username_taken)
+                    "register_failed" -> stringResource(R.string.error_register_failed)
+                    "profile_create_failed" -> stringResource(R.string.error_profile_create_failed)
+                    "not_authenticated_after_register" -> stringResource(R.string.error_not_authenticated_after_register)
+                    else -> stringResource(R.string.error_generic)
+                },
+                color = MaterialTheme.colorScheme.error
+            )
             Spacer(Modifier.height(8.dp))
         }
 
-        val passOk = pass.length >= 6 && pass == pass2
         Button(
             onClick = {
-                error = null; loading = true
-                if (!passOk) { error = "As palavras-passe não coincidem"; loading = false; return@Button }
-                vm.register(email, pass) { ok, err ->
+                errorCode = null; loading = true
+                if (!passOk) {
+                    errorCode = "passwords_mismatch"; loading = false; return@Button
+                }
+                if (!usernameOk) {
+                    errorCode = "invalid_username"; loading = false; return@Button
+                }
+                vm.registerWithUsername(email, pass, username) { ok, errCode ->
                     loading = false
-                    if (ok) onRegisterSuccess() else {
-                        error = when {
-                            (err?.contains("CONFIGURATION_NOT_FOUND", true) == true) ->
-                                "Configuração do Firebase inválida. Verifica o google-services.json e o método Email/Password no Console."
-                            (err?.contains("OPERATION_NOT_ALLOWED", true) == true) ->
-                                "Registo por email está desativado no Firebase. Ativa em Authentication → Sign-in method."
-                            else -> err ?: "Falha no registo. Tenta novamente."
-                        }
-                    }
+                    if (ok) onRegisterSuccess() else errorCode = errCode ?: "register_failed"
                 }
             },
-            enabled = !loading && email.isNotBlank() && passOk,
+            enabled = !loading && email.isNotBlank() && usernameOk && passOk,
             modifier = Modifier.fillMaxWidth()
-        ) { Text(if (loading) "A registar..." else "Criar conta") }
+        ) { Text(if (loading) stringResource(R.string.status_registering) else stringResource(R.string.action_create_account)) }
 
         Spacer(Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = { if (!loading) startGoogle() },
-            enabled = !loading,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Continuar com Google") }
-
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onGoLogin) { Text("Já tenho conta") }
-    }
-}
-
-private fun toFriendlyGoogleError(raw: String?): String {
-    val s = raw?.lowercase() ?: return "Falha no login Google."
-    return when {
-        "config" in s || "client" in s || "developer error" in s -> "Configuração inválida (SHA-1/JSON)."
-        "network" in s -> "Sem ligação. Tenta novamente."
-        else -> raw ?: "Falha no login Google."
+        TextButton(onClick = onGoLogin) { Text(stringResource(R.string.action_have_account)) }
     }
 }

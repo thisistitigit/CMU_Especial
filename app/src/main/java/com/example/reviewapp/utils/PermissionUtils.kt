@@ -34,7 +34,14 @@ object PermissionUtils {
         ) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
     }
-
+    // PermissionUtils.kt (já tens algo parecido — acrescenta este)
+    fun hasBackgroundLocationPermission(context: Context): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else true
+    }
     fun requestNotificationPermission(activity: Activity, requestCode: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ActivityCompat.requestPermissions(

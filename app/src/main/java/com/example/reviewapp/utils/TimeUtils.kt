@@ -1,9 +1,12 @@
 package com.example.reviewapp.utils
 
+import java.time.LocalTime
 import kotlin.math.abs
 
 
 object TimeUtils {
     fun now() = System.currentTimeMillis()
-    fun minutesBetween(a: Long, b: Long) = abs(a - b) / 60_000
-}
+    private val start = LocalTime.of(16, 0)
+    private val end   = LocalTime.of(18, 0)
+    fun isWithinPromoWindow(now: LocalTime = LocalTime.now()): Boolean =
+        !now.isBefore(start) && !now.isAfter(end)}

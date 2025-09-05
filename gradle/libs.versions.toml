@@ -46,6 +46,7 @@ hiltComposeNavigation = "1.1.0"
 credentials = "1.2.0"
 credentialsPlayServicesAuth = "1.2.0"
 googleid = "1.1.0"
+hiltCommon = "1.2.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -131,3 +132,4 @@ hilt-navigation-compose           = { group = "androidx.hilt", name = "hilt-navi
 junit                             = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit                    = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core            = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }

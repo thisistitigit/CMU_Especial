@@ -58,6 +58,7 @@ android {
 dependencies {
     // Compose BoM (uma vez chega)
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.hilt.common)
     androidTestImplementation(platform(libs.androidx.compose.bom))
 
     // Core

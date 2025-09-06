@@ -116,15 +116,6 @@ fun HomeScreen(
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.home_sort_label),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Spacer(Modifier.width(12.dp))
-                AssistChip(
-                    onClick = { sort = HomeSort.Rating },
-                    label = { Text(stringResource(R.string.home_sort_rating)) }
-                )
                 Spacer(Modifier.weight(1f))
                 if (isSearching || ui.isLoading) {
                     CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
@@ -147,7 +138,6 @@ fun HomeScreen(
                         title = stringResource(R.string.home_search_results_title),
                         places = searchOrdered.take(30),
                         onPlaceClick = onOpenDetails,
-                        showSeeMore = false,
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -161,8 +151,6 @@ fun HomeScreen(
                         title = stringResource(R.string.home_suggestions_title),
                         places = nearOrdered.take(30),
                         onPlaceClick = onOpenDetails,
-                        showSeeMore = true,
-                        onSeeMoreClick = { /* TODO: navegar para lista completa */ },
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {

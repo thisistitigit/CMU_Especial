@@ -40,7 +40,6 @@ import kotlinx.coroutines.withContext
 fun SearchScreen(
     vm: SearchViewModel = hiltViewModel(),
     onOpenDetails: (String) -> Unit,
-    onOpenReview: (String) -> Unit,
     onOpenProfile: () -> Unit
 ) {
     val ctx = LocalContext.current
@@ -236,10 +235,6 @@ fun SearchScreen(
                         ) {
                             TextButton(onClick = { onOpenDetails(p.id) }) {
                                 Text(stringResource(R.string.action_details))
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            TextButton(onClick = { onOpenReview(p.id) }) {
-                                Text(stringResource(R.string.action_review))
                             }
                         }
                         Divider()

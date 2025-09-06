@@ -139,12 +139,9 @@
     <string name="home_empty">Ainda não há resultados por aqui.</string>
     <string name="home_loading">A carregar…</string>
     <string name="home_error">Falha ao carregar. Tenta novamente.</string>
-    <string name="home_sort_label">Ordenar por</string>
-    <string name="home_sort_rating">Pontuação</string>
     <string name="home_sort_distance">Distância</string>
     <string name="home_explore_map">Explorar no mapa</string>
     <string name="home_suggestions_title">Sugestões perto de si</string>
-    <string name="home_see_more">Ver mais</string>
     <string name="home_nearby_title">Perto de si</string>
     <string name="home_search_results_title">Resultados da pesquisa</string>
     <string name="action_clear">Limpar</string>
@@ -193,7 +190,6 @@
     <string name="review_open_external">Abrir imagem</string>
     <string name="review_photo">Foto da avaliação</string>
     <string name="review_no_photo">Sem foto</string>
-
     <!-- Histórico -->
     <string name="history_title">Histórico</string>
     <string name="history_error_prefix">Erro: %1$s</string>
@@ -231,5 +227,25 @@
     <string name="location_modal_action_allow_always_open_settings">Abrir Definições para “Permitir sempre”</string>
     <string name="location_modal_open_settings">Abrir Definições</string>
     <string name="location_modal_not_now">Agora não</string>
+
+
+    <!-- Utilizador -->
+    <string name="user_generic">Utilizador</string>
+
+    <!-- Erros genéricos -->
+    <string name="error_fill_fields">Preenche os campos e escolhe as estrelas.</string>
+    <string name="error_submit_generic">Não foi possível enviar a avaliação. Tenta novamente.</string>
+
+    <!-- Localização / Regras -->
+    <string name="error_enable_location">Ativa a localização para avaliar no local.</string>
+    <string name="hint_grant_location_permission">Concede permissão de localização para avaliar no local.</string>
+    <string name="hint_enable_gps">Ativa a localização do dispositivo (GPS).</string>
+    <string name="hint_fetching_location">A obter localização…</string>
+
+    <!-- Distância/Tempo (com placeholders) -->
+    <string name="error_too_far">Estás longe do local (limite ~%1$d m).</string>
+    <string name="error_too_far_live">Estás longe do local (≈%1$d m; limite %2$d m).</string>
+    <string name="error_too_soon">Ainda não passaram %1$d minutos desde a última avaliação.</string>
+    <string name="error_too_soon_live">Aguarda ~%1$d min para nova avaliação.</string>
 
     </resources>

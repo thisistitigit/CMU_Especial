@@ -13,16 +13,18 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.StarSelector
-import com.example.reviewapp.viewmodels.AuthViewModel
-import com.example.reviewapp.viewmodels.ReviewFormViewModel
 import com.example.reviewapp.utils.MediaStoreUtils
 import com.example.reviewapp.utils.PermissionUtils
+import com.example.reviewapp.utils.ReviewRules
+import com.example.reviewapp.viewmodels.AuthViewModel
+import com.example.reviewapp.viewmodels.ReviewFormViewModel
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -30,7 +32,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,27 +45,23 @@ fun ReviewFormScreen(
     onCancel: () -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val uid = authVm.auth.currentUser?.uid
     var username by remember { mutableStateOf<String?>(null) }
     var loadingUser by remember { mutableStateOf(true) }
 
-
-    // ReviewFormScreen.kt  (substitui o LaunchedEffect pelo abaixo)
     LaunchedEffect(uid, placeId, navPlaceLat, navPlaceLng) {
         if (uid == null) { loadingUser = false; return@LaunchedEffect }
         try {
-            // username/init/warmup iguais…
             val snap = authVm.db.collection("users").document(uid).get().await()
             val fetched = snap.getString("username")
-                ?: authVm.auth.currentUser?.displayName ?: "Utilizador"
+                ?: authVm.auth.currentUser?.displayName ?: context.getString(R.string.user_generic)
             username = fetched
             vm.init(placeId = placeId, userId = uid, userName = fetched)
             vm.warmupRules(distanceMeters = null)
 
-            // perm + serviço
             val hasPerm = PermissionUtils.hasLocationPermission(context)
             vm.setLocationPermission(hasPerm)
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -72,39 +69,29 @@ fun ReviewFormScreen(
                     lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
             vm.setLocationEnabled(isEnabled)
 
-            // ------------ AQUI ESTÁ A MUDANÇA: fonte das coord. do sítio ------------
             val pLatLng: Pair<Double, Double>? = when {
                 navPlaceLat != null && navPlaceLng != null -> navPlaceLat to navPlaceLng
                 else -> {
-                    // fallback para Firestore apenas se não veio via navegação
                     val doc = authVm.db.collection("places").document(placeId).get().await()
-                    // tenta GeoPoint comum
                     doc.getGeoPoint("geo")?.let { it.latitude to it.longitude }
                         ?: doc.getGeoPoint("location")?.let { it.latitude to it.longitude }
-                        // tenta top-level doubles
                         ?: run {
                             val a = doc.getDouble("lat"); val b = doc.getDouble("lng")
                             if (a != null && b != null) a to b else null
                         }
-                        // tenta nested maps geometry.location.lat/lng
                         ?: run {
                             val geom = doc.get("geometry") as? Map<*, *>
-                            val loc  = geom?.get("location") as? Map<*, *>
+                            val loc = geom?.get("location") as? Map<*, *>
                             val a = (loc?.get("lat") as? Number)?.toDouble()
                             val b = (loc?.get("lng") as? Number)?.toDouble()
                             if (a != null && b != null) a to b else null
                         }
                 }
             }
-            // -------------------------------------------------------------------------
 
             if (hasPerm && isEnabled && pLatLng != null) {
                 vm.setLocLoading(true)
-                val loc = getOneShotLocation(
-                    context,
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                    timeoutMs = 8000
-                )
+                val loc = getOneShotLocation(context, Priority.PRIORITY_BALANCED_POWER_ACCURACY, 8000)
                 vm.setLocLoading(false)
 
                 val (pLat, pLng) = pLatLng
@@ -114,12 +101,10 @@ fun ReviewFormScreen(
                     Location.distanceBetween(loc.latitude, loc.longitude, pLat, pLng, r)
                     vm.setDistanceMeters(r[0].toDouble())
                 } else {
-                    // sem fix: HARD FALLBACK para não bloquear
-                    vm.setUserLocation(pLat, pLng)
+                    vm.setUserLocation(pLat, pLng) // fallback: não bloqueia
                     vm.setDistanceMeters(0.0)
                 }
             } else {
-                // se não temos coord. do sítio → não bloqueia: assume no local (desbloqueia já)
                 if (pLatLng != null) {
                     vm.setUserLocation(pLatLng.first, pLatLng.second)
                     vm.setDistanceMeters(0.0)
@@ -135,20 +120,16 @@ fun ReviewFormScreen(
         } finally { loadingUser = false }
     }
 
-
-
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
-    val takePicture = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) pendingCaptureUri?.let { vm.setPhotoLocalPath(it.toString()) }
         pendingCaptureUri = null
     }
     val requestCameraPermission = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
+        ActivityResultContracts.RequestPermission()
     ) { granted -> if (granted) pendingCaptureUri?.let { takePicture.launch(it) } }
     val pickImage = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        ActivityResultContracts.GetContent()
     ) { uri: Uri? -> uri?.let { vm.setPhotoLocalPath(it.toString()) } }
 
     Scaffold(
@@ -160,13 +141,16 @@ fun ReviewFormScreen(
         }
     ) { padding ->
         Column(Modifier.padding(padding).padding(16.dp)) {
-
             when {
                 loadingUser -> { CircularProgressIndicator(); return@Column }
-                uid == null   -> { Text(stringResource(R.string.error_not_authenticated),
-                    color = MaterialTheme.colorScheme.error); return@Column }
-                username == null -> { Text(stringResource(R.string.error_generic),
-                    color = MaterialTheme.colorScheme.error); return@Column }
+                uid == null -> {
+                    Text(stringResource(R.string.error_not_authenticated), color = MaterialTheme.colorScheme.error)
+                    return@Column
+                }
+                username == null -> {
+                    Text(stringResource(R.string.error_generic), color = MaterialTheme.colorScheme.error)
+                    return@Column
+                }
             }
 
             if (!state.photoLocalPath.isNullOrBlank()) {
@@ -221,28 +205,36 @@ fun ReviewFormScreen(
 
             Spacer(Modifier.height(16.dp))
 
-            val canSubmit = state.canSubmit && state.rulesOk
             Button(
-                enabled = canSubmit && !state.isSubmitting,
-                onClick = {
-                    // Só navega se o submit for bem sucedido
-                    scope.launch {
-                        val ok = vm.submit()
-                        if (ok) onDone()
-                    }
-                }
+                enabled = state.canSubmit && state.rulesOk && !state.isSubmitting,
+                onClick = { scope.launch { if (vm.submit()) onDone() } }
             ) { Text(stringResource(R.string.action_submit)) }
 
             if (!state.rulesOk || state.ruleMessage != null) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = state.ruleMessage ?: stringResource(R.string.rules_not_met),
+                    text = when (state.ruleMessage) {
+                        "hint_grant_location_permission" -> stringResource(R.string.hint_grant_location_permission)
+                        "hint_enable_gps" -> stringResource(R.string.hint_enable_gps)
+                        "hint_fetching_location" -> stringResource(R.string.hint_fetching_location)
+                        "error_too_far" -> stringResource(R.string.error_too_far, ReviewRules.MIN_DISTANCE_METERS.toInt())
+                        "error_too_far_live" -> stringResource(R.string.error_too_far_live,
+                            (state.distanceMeters ?: 0.0).toInt(), ReviewRules.MIN_DISTANCE_METERS.toInt())
+                        "error_too_soon" -> stringResource(R.string.error_too_soon, ReviewRules.MIN_INTERVAL_MINUTES)
+                        "error_too_soon_live" -> stringResource(R.string.error_too_soon_live, ReviewRules.MIN_INTERVAL_MINUTES)
+                        "error_enable_location" -> stringResource(R.string.error_enable_location)
+                        "error_fill_fields" -> stringResource(R.string.error_fill_fields)
+                        "error_submit_generic" -> stringResource(R.string.error_submit_generic)
+                        "error_not_authenticated" -> stringResource(R.string.error_not_authenticated)
+                        else -> stringResource(R.string.rules_not_met)
+                    },
                     color = MaterialTheme.colorScheme.error
                 )
             }
         }
     }
 }
+
 private suspend fun getOneShotLocation(
     context: Context,
     priority: Int = Priority.PRIORITY_HIGH_ACCURACY,
@@ -250,46 +242,26 @@ private suspend fun getOneShotLocation(
 ): Location? {
     val fused = LocationServices.getFusedLocationProviderClient(context)
 
-    // 1) tenta getCurrentLocation (rápido quando há fix)
     val current = withTimeoutOrNull(timeoutMs / 2) {
-        try {
-            fused.getCurrentLocation(priority, null).await()
-        } catch (_: Exception) {
-            null
-        }
+        try { fused.getCurrentLocation(priority, null).await() } catch (_: Exception) { null }
     }
     if (current != null) return current
 
-    // 2) tenta lastLocation
-    val last = try {
-        fused.lastLocation.await()
-    } catch (_: Exception) {
-        null
-    }
+    val last = try { fused.lastLocation.await() } catch (_: Exception) { null }
     if (last != null) return last
 
-    // 3) one-shot requestLocationUpdates (garante um fix novo)
     return withTimeoutOrNull(timeoutMs) {
         suspendCancellableCoroutine<Location?> { cont ->
-            val req = LocationRequest.Builder(priority, /*interval*/ 0L)
-                .setMinUpdateIntervalMillis(0)
-                .setMaxUpdates(1)
-                .build()
-
+            val req = LocationRequest.Builder(priority, 0L).setMinUpdateIntervalMillis(0).setMaxUpdates(1).build()
             val cb = object : com.google.android.gms.location.LocationCallback() {
-                override fun onLocationResult(result: com.google.android.gms.location.LocationResult) {
-                    val loc = result.lastLocation
-                    if (!cont.isCompleted) cont.resume(loc, onCancellation = null)
+                override fun onLocationResult(res: com.google.android.gms.location.LocationResult) {
+                    if (!cont.isCompleted) cont.resume(res.lastLocation, onCancellation = null)
                     fused.removeLocationUpdates(this)
                 }
             }
-
-            try {
-                fused.requestLocationUpdates(req, cb, Looper.getMainLooper())
-            } catch (se: SecurityException) {
+            try { fused.requestLocationUpdates(req, cb, Looper.getMainLooper()) } catch (_: SecurityException) {
                 if (!cont.isCompleted) cont.resume(null, onCancellation = null)
             }
-
             cont.invokeOnCancellation { fused.removeLocationUpdates(cb) }
         }
     }

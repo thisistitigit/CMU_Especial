@@ -24,8 +24,7 @@ fun PlaceHorizontalSection(
     title: String,
     places: List<Place>,
     onPlaceClick: (String) -> Unit,
-    showSeeMore: Boolean = false,
-    onSeeMoreClick: (() -> Unit)? = null,
+
     modifier: Modifier = Modifier
 ) {
     Column(modifier) {
@@ -40,12 +39,6 @@ fun PlaceHorizontalSection(
                 style = MaterialTheme.typography.titleLarge
             )
             Spacer(Modifier.width(8.dp))
-            if (showSeeMore) {
-                AssistChip(
-                    onClick = { onSeeMoreClick?.invoke() },
-                    label = { Text(stringResource(R.string.home_see_more)) }
-                )
-            }
         }
 
         LazyRow(

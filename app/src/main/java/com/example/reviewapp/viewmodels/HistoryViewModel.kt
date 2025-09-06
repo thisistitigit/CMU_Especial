@@ -3,6 +3,7 @@ package com.example.reviewapp.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.core.ext.requireSignedInUid
+import com.example.reviewapp.data.repository.PlaceRepository
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,13 +18,14 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val reviewRepo: ReviewRepository,
+    private val placeRepo: PlaceRepository,
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
     data class Row(
         val reviewId: String,
         val placeId: String,
-        val placeName: String,     // vem da própria review
+        val placeName: String,     // preferimos o da review; se faltar, usamos o do Place
         val pastryName: String,
         val stars: Int,
         val createdAt: Long,
@@ -49,15 +51,24 @@ class HistoryViewModel @Inject constructor(
             .onStart { _ui.update { it.copy(isLoading = true, error = null) } }
             .catch { e -> _ui.update { it.copy(isLoading = false, error = e.message) } }
             .collect { reviews ->
-                // ordenar mais recentes primeiro e usar name/address diretamente da review
+                // 1) enriquecer/catchear os places por id (não bloqueia a UI se falhar)
+                val ids = reviews.map { it.placeId.trim() }.distinct()
+                val map = runCatching { placeRepo.enrichIds(ids) }.getOrDefault(emptyMap())
+
+                // 2) construir as linhas (nome da review; se faltar, usa o do place)
                 val rows = reviews
                     .sortedByDescending { it.createdAt }
                     .map { r ->
+                        val place = map[r.placeId.trim()]
+                        val displayName = r.placeName?.trim()
+                            ?: place?.name
+                            ?: r.placeAddress?.trim()
+                            ?: "—"
+
                         Row(
                             reviewId = r.id,
                             placeId = r.placeId.trim(),
-                            placeName = (r.placeName?.trim())
-                                ?: (r.placeAddress?.trim() ?: "—"),
+                            placeName = displayName,
                             pastryName = r.pastryName,
                             stars = r.stars,
                             createdAt = r.createdAt,

@@ -4,6 +4,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 import android.content.ContentValues.TAG
+import android.content.Context
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.data.models.Review
@@ -12,31 +13,27 @@ import com.example.reviewapp.network.dto.fetchPaged
 import com.example.reviewapp.network.dto.observeAll
 import com.example.reviewapp.network.dto.observeByField
 import com.example.reviewapp.network.dto.reviewsCollection
-import com.example.reviewapp.network.dto.toMapNonNull
-import com.example.reviewapp.network.mappers.toRemoteDto
 import com.example.reviewapp.utils.runCatchingLogAsync
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import androidx.core.net.toUri
 import com.example.reviewapp.core.ext.requireSignedInUid
 import com.example.reviewapp.data.dao.PlaceDao
-import com.example.reviewapp.data.locals.PlaceEntity
+import com.example.reviewapp.di.ReviewPhotoSyncWorker
 import com.example.reviewapp.network.dto.ReviewRemoteDto
 import com.example.reviewapp.network.mappers.toEntity
 import com.example.reviewapp.network.mappers.toModel
 import com.example.reviewapp.utils.ReviewRules
 import com.google.firebase.firestore.Query
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 class ReviewRepositoryImpl(
     private val reviewDao: ReviewDao,
@@ -44,7 +41,7 @@ class ReviewRepositoryImpl(
     private val firestore: FirebaseFirestore? = null,
     private val storage: FirebaseStorage? = null,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-
+    @ApplicationContext private val appContext: Context
 ) : ReviewRepository {
 
     override fun currentUid(): String? = auth.currentUser?.uid
@@ -53,30 +50,39 @@ class ReviewRepositoryImpl(
         reviewDao.lastCreatedAtByUser(userId)
 
     override suspend fun addReview(review: Review) {
-        // 1) exige sessão iniciada
         val uid = auth.requireSignedInUid()
         val normalized = review.copy(userId = uid)
 
-        // 1) Grava local (sempre)
+        // 1) Local (sempre)
         reviewDao.upsert(normalized.toEntity())
 
-        // 2) Cloud (opcional)
-        val db = firestore ?: return
+        // 2) Firestore: escrever o doc SEM depender da foto (Firestore Android tem cache offline)
+        firestore?.let { db ->
+            runCatching {
+                saveReviewDocs(db, normalized, /*photoUrl*/ null) // escreve já o doc
+            }
+        }
+
+        // 3) Foto → tentar agora; se falhar, o Worker trata quando houver rede
         val st = storage
+        if (st != null && normalized.photoLocalPath != null) {
+            val cloudUrl = try {
+                // tentativa imediata
+                uploadPhotoIfNeeded(st, normalized) // devolve URL ou lança
+            } catch (_: Exception) { null }
 
-        val cloudUrl = if (st != null) uploadPhotoIfNeeded(st, normalized) else null
-
-        runCatchingLogAsync(TAG, "Firestore write failed") {
-            saveReviewDocs(db, normalized, cloudUrl)
-        }.onSuccess {
             if (cloudUrl != null) {
-                // atualização de url em background
-                CoroutineScope(Dispatchers.IO).launch {
-                    reviewDao.updateCloudUrl(normalized.id, cloudUrl)
-                }
+                // patch Firestore e Room (ok online)
+                firestore?.collection("reviews")?.document(normalized.id)
+                    ?.update(mapOf("photoCloudUrl" to cloudUrl))
+                reviewDao.updateCloudUrl(normalized.id, cloudUrl)
+            } else {
+                // agendar para quando houver rede
+                ReviewPhotoSyncWorker.enqueue(appContext, normalized.id)
             }
         }
     }
+
 
     private suspend fun uploadPhotoIfNeeded(storage: FirebaseStorage, review: Review): String? {
         if (review.photoCloudUrl != null) return review.photoCloudUrl
@@ -94,27 +100,6 @@ class ReviewRepositoryImpl(
         }.getOrNull()
     }
 
-/**
-    private suspend fun saveReviewDocs(
-        db: FirebaseFirestore,
-        review: Review,
-        cloudUrl: String?
-    ) {
-        // tenta obter meta do local do Room
-        val pe = placeDao.get(review.placeId)
-        val dto = review.toRemoteDto(
-            photoUrl = cloudUrl,
-            placeName = pe?.name,
-            placeAddress = pe?.address
-        )
-        val payload = dto.toMapNonNull()
-
-        db.reviewsCollection()
-            .document(review.id)
-            .set(payload, SetOptions.merge())
-            .await()
-    }
-*/
     private suspend fun saveReviewDocs(
         db: FirebaseFirestore,
         review: Review,
@@ -258,7 +243,7 @@ class ReviewRepositoryImpl(
                 val place = dto?.let {
                     Place(
                         id = it.placeId,
-                        name = if (it.placeName.isBlank()) "Estabelecimento" else it.placeName,
+                        name = it.placeName,
                         address = it.placeAddress,
                         lat = 0.0, lng = 0.0,
                         phone = null,
@@ -267,7 +252,6 @@ class ReviewRepositoryImpl(
                         ratingsCount = 0
                     )
                 }
-                // envia para o flow (ignora se o collector estiver lento/cancelado)
                 trySend(place)
             }
 

@@ -164,10 +164,7 @@ fun AppNavGraph(nav: NavHostController) {
                     arguments = listOf(navArgument("placeId") { type = NavType.StringType })
                 ) { back ->
                     val raw = back.arguments?.getString("placeId")
-                    Log.d("DetailsNav", "arg placeId (raw) = '$raw'")
                     val placeId = Uri.decode(raw ?: "").trim()
-                    Log.d("DetailsNav", "arg placeId (decoded) = '$placeId'")
-
                     DetailsScreen(
                         placeId = placeId,
                         onBack = { nav.popBackStack() },

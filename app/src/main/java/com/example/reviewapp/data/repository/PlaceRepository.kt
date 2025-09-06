@@ -16,10 +16,10 @@ interface PlaceRepository {
     suspend fun getDetails(placeId: String): Place
     suspend fun leaderboard(limit: Int = 50): List<Place>
 
-    suspend fun searchAround(
-        lat: Double,
-        lng: Double,
-        radiusMeters: Int = 5000,
-        types: Set<PlaceType> = PlaceType.DEFAULT
-    ): List<Place>
+
+    /** Enriquecer uma lista de IDs: devolve um Map<placeId, Place> (já cacheado no Room). */
+    suspend fun enrichIds(placeIds: Collection<String>): Map<String, Place>
+
+    /** Conveniência: enriquece uma lista de Places e devolve a lista mergeada. */
+    suspend fun enrichPlaces(list: List<Place>): List<Place>
 }

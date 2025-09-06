@@ -1,7 +1,6 @@
 package com.example.reviewapp.utils
 
-inline fun <T> runCatchingLog(tag: String, msg: String, block: () -> T): Result<T> =
-    runCatching(block).onFailure { e -> android.util.Log.e(tag, msg, e) }
+
 
 suspend inline fun <T> runCatchingLogAsync(
     tag: String,

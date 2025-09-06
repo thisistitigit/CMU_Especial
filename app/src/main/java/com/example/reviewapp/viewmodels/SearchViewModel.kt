@@ -3,6 +3,7 @@ package com.example.reviewapp.viewmodels
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,11 +16,18 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlin.math.*
 
 @HiltViewModel
@@ -74,21 +82,16 @@ class SearchViewModel @Inject constructor(
         }.sortedByDescending { it.avgRating }
     }
 
-    // ---------- FETCHES SEPARADOS ----------
-
     private suspend fun doFetchSearch(center: LatLng, radiusMeters: Int) {
         _state.update { it.copy(isLoading = true, error = null) }
 
-        suspend fun fetch(r: Int): List<Place> =
+        suspend fun fetch(r: Int) =
             runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
                 .getOrElse { emptyList() }
 
         var usedRadius = radiusMeters
         var list = fetch(usedRadius)
-        if (list.isEmpty() && usedRadius < 6000) {
-            usedRadius = 6000
-            list = fetch(usedRadius)
-        }
+        if (list.isEmpty() && usedRadius < 6000) { usedRadius = 6000; list = fetch(usedRadius) }
 
         rawSearchPlaces = list
         _state.update {
@@ -97,24 +100,29 @@ class SearchViewModel @Inject constructor(
                 searchCenter = center,
                 fetchedRadiusMeters = usedRadius,
                 places = applyLocalRadiusFilter(center, it.radiusMeters.coerceAtMost(usedRadius), rawSearchPlaces),
-                isLoading = false,
-                error = null
+                isLoading = false, error = null
             )
         }
-    }
 
+        // enrich em background (telefone/ratings/coords)
+        viewModelScope.launch {
+            val enriched = runCatching { placeRepo.enrichPlaces(rawSearchPlaces) }.getOrNull() ?: return@launch
+            if (enriched !== rawSearchPlaces) {
+                rawSearchPlaces = enriched
+                _state.update {
+                    it.copy(places = applyLocalRadiusFilter(center, it.radiusMeters.coerceAtMost(usedRadius), rawSearchPlaces))
+                }
+            }
+        }
+    }
     private suspend fun doFetchNearMe(center: LatLng, radiusMeters: Int) {
-        // não bloquear o ecrã todo por causa do near me
-        suspend fun fetch(r: Int): List<Place> =
+        suspend fun fetch(r: Int) =
             runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
                 .getOrElse { emptyList() }
 
         var usedRadius = radiusMeters
         var list = fetch(usedRadius)
-        if (list.isEmpty() && usedRadius < 6000) {
-            usedRadius = 6000
-            list = fetch(usedRadius)
-        }
+        if (list.isEmpty() && usedRadius < 6000) { usedRadius = 6000; list = fetch(usedRadius) }
 
         rawNearMePlaces = list
         _state.update {
@@ -123,6 +131,16 @@ class SearchViewModel @Inject constructor(
                 nearMeFetchedRadiusMeters = usedRadius,
                 nearMePlaces = applyLocalRadiusFilter(center, it.radiusMeters.coerceAtMost(usedRadius), rawNearMePlaces)
             )
+        }
+
+        viewModelScope.launch {
+            val enriched = runCatching { placeRepo.enrichPlaces(rawNearMePlaces) }.getOrNull() ?: return@launch
+            if (enriched !== rawNearMePlaces) {
+                rawNearMePlaces = enriched
+                _state.update {
+                    it.copy(nearMePlaces = applyLocalRadiusFilter(center, it.radiusMeters.coerceAtMost(usedRadius), rawNearMePlaces))
+                }
+            }
         }
     }
 
@@ -148,7 +166,7 @@ class SearchViewModel @Inject constructor(
                     doFetchSearch(me, _state.value.radiusMeters)
                     return
                 }
-            } catch (t: Throwable) {
+            } catch (_: Throwable) {
             }
         }
 
@@ -159,8 +177,6 @@ class SearchViewModel @Inject constructor(
 
     // ---------- API PÚBLICA ----------
 
-    /** Atualiza o RAIO. Aplica aos dois conjuntos:
-     *  - se novo raio excede o último fetch respetivo, volta a ir buscar; senão, filtra localmente. */
     fun setRadiusMeters(newRadius: Int) = viewModelScope.launch {
         val st = _state.value
         _state.update { it.copy(radiusMeters = newRadius) }
@@ -187,7 +203,6 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    /** Força refresh “perto de mim” via GPS (requer permissão). */
     fun refreshNearMe(radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -200,7 +215,6 @@ class SearchViewModel @Inject constructor(
         doFetchNearMe(LatLng(best.latitude, best.longitude), radiusMeters)
     }
 
-    /** Pesquisa numa área específica (geocoding ou mapa). NÃO mexe no “perto de si”. */
     fun refreshAt(center: LatLng, radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
         doFetchSearch(center, radiusMeters)
     }

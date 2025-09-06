@@ -62,8 +62,16 @@
         fun provideReviewRepository(
             reviewDao: ReviewDao,
             placeDao: PlaceDao,
-            firestore: FirebaseFirestore,
-            storage: FirebaseStorage
-        ): ReviewRepository =
-            ReviewRepositoryImpl(reviewDao,placeDao, firestore, storage)
+            firestore: FirebaseFirestore?,   // se usares nullable no repo
+            storage: FirebaseStorage?,       // idem
+            auth: FirebaseAuth,
+            @ApplicationContext context: Context   // <-- FALTAVA ISTO
+        ): ReviewRepository = ReviewRepositoryImpl(
+            reviewDao = reviewDao,
+            placeDao = placeDao,
+            firestore = firestore,
+            storage = storage,
+            auth = auth,
+            appContext = context
+        )
     }

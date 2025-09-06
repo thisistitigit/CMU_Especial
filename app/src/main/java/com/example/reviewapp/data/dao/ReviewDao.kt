@@ -13,7 +13,6 @@ import com.example.reviewapp.data.locals.ReviewEntity
 interface ReviewDao {
     @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC LIMIT 10")
     suspend fun latestForPlace(placeId: String): List<ReviewEntity>
-
     @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC")
     suspend fun allForPlace(placeId: String): List<ReviewEntity>
     @Query("UPDATE reviews SET photoCloudUrl = :url WHERE id = :reviewId")
@@ -48,6 +47,13 @@ interface ReviewDao {
         ORDER BY createdAt DESC
     """)
     fun flowHistoryForUser(uid: String): kotlinx.coroutines.flow.Flow<List<ReviewEntity>>
-
+    @Query("""
+        SELECT * FROM reviews
+        WHERE photoLocalPath IS NOT NULL
+          AND (photoCloudUrl IS NULL OR photoCloudUrl = '')
+        ORDER BY createdAt ASC
+        LIMIT :limit
+    """)
+    suspend fun pendingPhotoUpload(limit: Int = 50): List<ReviewEntity>
 }
 

@@ -20,21 +20,3 @@ data class ReviewRemoteDto(
 
 )
 
-// ---- helpers ----
-inline fun <K, V : Any> Map<K, V?>.toNonNullMap(): Map<K, V> =
-    buildMap { for ((k, v) in this@toNonNullMap) if (v != null) put(k, v) }
-
-// Converte o DTO num Map<String, Any> *sem* chaves nulas
-fun ReviewRemoteDto.toMapNonNull(): Map<String, Any> = mapOf(
-    "id" to id,
-    "placeId" to placeId,
-    "placeName" to placeName,
-    "placeAddress" to placeAddress,
-    "userId" to userId,
-    "userName" to userName,
-    "pastryName" to pastryName,
-    "stars" to stars,
-    "comment" to comment,
-    "createdAt" to createdAt,
-    "photoCloudUrl" to photoCloudUrl
-).toNonNullMap()

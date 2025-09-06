@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.locals.ReviewEntity
+import com.example.reviewapp.data.repository.PlaceRepository
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.network.mappers.toEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val reviewDao: ReviewDao,
-    private val reviewRepo: ReviewRepository
+    private val reviewRepo: ReviewRepository,
+    private val placeRepo: PlaceRepository
 ) : ViewModel() {
 
     enum class Tab { ESTABLISHMENTS, PASTRIES }
@@ -53,14 +55,13 @@ class LeaderboardViewModel @Inject constructor(
         viewModelScope.launch {
             _ui.value = _ui.value.copy(isLoading = true, error = null)
             runCatching {
-                // puxa do Firestore e cacheia no Room
                 reviewRepo.refreshAllReviews(maxToFetch = 2000, pageSize = 500)
-
-                // lê do Room e agrega
                 val reviews = reviewDao.listAll()
+                val rows = aggregateEstablishmentsFromReviews(reviews)
+                val enriched = enrichRowsWithPlaces(rows)
                 _ui.value = _ui.value.copy(
                     isLoading = false,
-                    establishments = aggregateEstablishmentsFromReviews(reviews),
+                    establishments = enriched,
                     pastries = aggregatePastries(reviews)
                 )
             }.onFailure { e ->
@@ -77,10 +78,12 @@ class LeaderboardViewModel @Inject constructor(
         reviewRepo.streamAllReviews()
             .map { reviews ->
                 val entities = reviews.map { it.toEntity() }
+                val rows = aggregateEstablishmentsFromReviews(entities)
+                val enriched = enrichRowsWithPlaces(rows)
                 UiState(
                     isLoading = false,
                     tab = _ui.value.tab,
-                    establishments = aggregateEstablishmentsFromReviews(entities),
+                    establishments = enriched,
                     pastries = aggregatePastries(entities)
                 )
             }
@@ -89,38 +92,27 @@ class LeaderboardViewModel @Inject constructor(
     }
 
     // ---- Aggregations (só com reviews) ----
-
     private fun aggregateEstablishmentsFromReviews(
         reviews: List<ReviewEntity>
     ): List<PlaceRow> {
         val byPlace = reviews.groupBy { it.placeId.trim() }
 
         fun latestNonEmptyName(rs: List<ReviewEntity>): String? =
-            rs.asSequence()
-                .sortedByDescending { it.createdAt }
+            rs.asSequence().sortedByDescending { it.createdAt }
                 .mapNotNull { it.placeName?.trim() }
                 .firstOrNull { it.isNotEmpty() }
 
         fun latestAddress(rs: List<ReviewEntity>): String? =
-            rs.asSequence()
-                .sortedByDescending { it.createdAt }
+            rs.asSequence().sortedByDescending { it.createdAt }
                 .mapNotNull { it.placeAddress?.trim() }
                 .firstOrNull { it.isNotEmpty() }
 
         val rows = byPlace.map { (placeId, rs) ->
             val count = rs.size
             val avg = rs.map { it.stars }.average()
-
             val name = latestNonEmptyName(rs) ?: latestAddress(rs) ?: "—"
             val address = latestAddress(rs)
-
-            PlaceRow(
-                placeId = placeId,
-                name = name,
-                address = address,
-                avg = avg,
-                count = count
-            )
+            PlaceRow(placeId, name, address, avg, count)
         }
 
         return rows.sortedWith(
@@ -145,5 +137,22 @@ class LeaderboardViewModel @Inject constructor(
                 .thenByDescending { it.count }
                 .thenBy { it.pastryName.lowercase() }
         )
+    }
+
+    // ---- Enriquecer linhas com nome/morada do Place (e cache p/ Detalhes) ----
+    private suspend fun enrichRowsWithPlaces(rows: List<PlaceRow>): List<PlaceRow> {
+        if (rows.isEmpty()) return rows
+        val ids = rows.map { it.placeId }.distinct()
+        val map = placeRepo.enrichIds(ids) // cacheado no Room
+        return rows.map { r ->
+            val p = map[r.placeId]
+            r.copy(
+                name = when {
+                    r.name == "—" || r.name.isBlank() -> p?.name ?: r.name
+                    else -> r.name
+                },
+                address = r.address ?: p?.address
+            )
+        }
     }
 }

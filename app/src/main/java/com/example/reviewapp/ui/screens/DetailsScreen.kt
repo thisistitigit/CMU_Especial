@@ -43,7 +43,7 @@ fun DetailsScreen(
     placeId: String,
     vm: DetailsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onReview: (String) -> Unit = {},
+    onReview: (String, Double?, Double?) -> Unit = { _,_,_ -> }, // <- muda
     onOpenReviewDetails: (String) -> Unit = {},
     onOpenAllReviews: (String) -> Unit = {}
 ) {
@@ -71,7 +71,9 @@ fun DetailsScreen(
         },
         floatingActionButton = {
             state.place?.let { place ->
-                ExtendedFloatingActionButton(onClick = { onReview(place.id) }) {
+                ExtendedFloatingActionButton(onClick = {
+                    onReview(place.id, place.lat, place.lng)   // <- envia lat/lng daqui
+                }) {
                     Text(stringResource(R.string.details_review_cta))
                 }
             }

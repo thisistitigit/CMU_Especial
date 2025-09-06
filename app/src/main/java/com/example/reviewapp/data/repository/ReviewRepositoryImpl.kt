@@ -32,6 +32,7 @@ import com.example.reviewapp.network.dto.ReviewRemoteDto
 import com.example.reviewapp.network.mappers.toEntity
 import com.example.reviewapp.network.mappers.toModel
 import com.example.reviewapp.utils.ReviewRules
+import com.example.reviewapp.utils.ReviewRules.distanceMeters
 import com.google.firebase.firestore.Query
 import dagger.hilt.android.qualifiers.ApplicationContext
 
@@ -49,37 +50,55 @@ class ReviewRepositoryImpl(
     override suspend fun lastReviewAtByUser(userId: String): Long? =
         reviewDao.lastCreatedAtByUser(userId)
 
-    override suspend fun addReview(review: Review) {
+    override suspend fun addReview(
+        review: Review,
+        userLat: Double,
+        userLng: Double,
+        now: Long
+    ) {
         val uid = auth.requireSignedInUid()
-        val normalized = review.copy(userId = uid)
+
+        // 0) Regras ANTES de gravar
+        enforceCanReviewOrThrow(uid, review.placeId, userLat, userLng, now)
 
         // 1) Local (sempre)
+        val normalized = review.copy(userId = uid, createdAt = now)
         reviewDao.upsert(normalized.toEntity())
 
-        // 2) Firestore: escrever o doc SEM depender da foto (Firestore Android tem cache offline)
-        firestore?.let { db ->
-            runCatching {
-                saveReviewDocs(db, normalized, /*photoUrl*/ null) // escreve já o doc
-            }
-        }
+        // 2) Firestore: doc sem foto (cache offline trata do resto)
+        firestore?.let { db -> runCatching { saveReviewDocs(db, normalized, null) } }
 
-        // 3) Foto → tentar agora; se falhar, o Worker trata quando houver rede
+        // 3) Foto (tenta já; senão agenda para quando houver rede)
         val st = storage
         if (st != null && normalized.photoLocalPath != null) {
-            val cloudUrl = try {
-                // tentativa imediata
-                uploadPhotoIfNeeded(st, normalized) // devolve URL ou lança
-            } catch (_: Exception) { null }
-
+            val cloudUrl = runCatching { uploadPhotoIfNeeded(st, normalized) }.getOrNull()
             if (cloudUrl != null) {
-                // patch Firestore e Room (ok online)
                 firestore?.collection("reviews")?.document(normalized.id)
                     ?.update(mapOf("photoCloudUrl" to cloudUrl))
                 reviewDao.updateCloudUrl(normalized.id, cloudUrl)
             } else {
-                // agendar para quando houver rede
                 ReviewPhotoSyncWorker.enqueue(appContext, normalized.id)
             }
+        }
+    }
+
+
+    class ReviewDeniedException(val reason: Reason): IllegalStateException() {
+        enum class Reason { TOO_FAR, TOO_SOON }
+    }
+
+    suspend fun enforceCanReviewOrThrow(
+        userId: String, placeId: String, userLat: Double, userLng: Double, now: Long
+    ) {
+        val place = placeDao.get(placeId)
+            ?: throw IllegalStateException("Place $placeId não encontrado")
+        val last = reviewDao.lastCreatedAtByUser(userId)
+        val dist = distanceMeters(userLat, userLng, place.lat, place.lng)
+        val ok = ReviewRules.canReview(dist, last, now)
+        if (!ok) {
+            val tooFar = dist > 250.0
+            throw ReviewDeniedException(if (tooFar) ReviewDeniedException.Reason.TOO_FAR
+            else ReviewDeniedException.Reason.TOO_SOON)
         }
     }
 
@@ -138,13 +157,12 @@ class ReviewRepositoryImpl(
     override suspend fun history(userId: String): List<Review> =
         reviewDao.history(userId).map { it.toModel() }
 
-    override suspend fun canUserReviewHere(userId: String, place: Place, now: Long): Boolean {
-        val last = reviewDao.history(userId).firstOrNull()?.createdAt
-        return ReviewRules.canReview(
-            distanceMeters = 0.0,
-            lastReviewAt = last,
-            now = now
-        )
+    override suspend fun canUserReviewHere(
+        userId: String, place: Place, now: Long, userLat: Double, userLng: Double
+    ): Boolean {
+        val last = reviewDao.lastCreatedAtByUser(userId)
+        val dist = distanceMeters(userLat, userLng, place.lat, place.lng)
+        return ReviewRules.canReview(dist, last, now)
     }
 
     override suspend fun getReview(id: String): Review? =
@@ -174,6 +192,8 @@ class ReviewRepositoryImpl(
         if (all.isNotEmpty()) reviewDao.upsertAll(all.map { it.toEntity() })
         return all.size
     }
+
+
 
 
     override fun streamPlaceReviews(placeId: String): Flow<List<Review>> = channelFlow {

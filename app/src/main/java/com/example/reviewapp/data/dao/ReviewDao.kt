@@ -55,5 +55,10 @@ interface ReviewDao {
         LIMIT :limit
     """)
     suspend fun pendingPhotoUpload(limit: Int = 50): List<ReviewEntity>
+
+
+    @Query("SELECT createdAt FROM reviews WHERE userId=:uid AND placeId=:placeId ORDER BY createdAt DESC LIMIT 1")
+    suspend fun lastCreatedAtByUserAtPlace(uid: String, placeId: String): Long?
+
 }
 

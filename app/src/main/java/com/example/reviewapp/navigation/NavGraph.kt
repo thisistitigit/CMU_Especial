@@ -44,7 +44,14 @@ sealed class Route(val route: String) {
 
     data object Details : Route("details/{placeId}") {
         fun build(id: String) = "details/${Uri.encode(id)}"
-    }    data object ReviewForm : Route("review/{placeId}") { fun build(id: String) = "review/$id" }
+    }
+    data object ReviewForm : Route("review/{placeId}?lat={lat}&lng={lng}") {
+        fun build(id: String) = "review/${Uri.encode(id)}" // continua a existir (back-compat)
+        fun build(id: String, lat: Double?, lng: Double?): String {
+            val base = "review/${Uri.encode(id)}"
+            return if (lat != null && lng != null) "$base?lat=$lat&lng=$lng" else base
+        }
+    }
     data object ReviewDetails : Route("reviewDetails/{reviewId}") { fun build(id: String) = "reviewDetails/$id" }
     data object ReviewsAll : Route("reviewsAll/{placeId}") { fun build(id: String) = "reviewsAll/$id" }
 
@@ -168,18 +175,28 @@ fun AppNavGraph(nav: NavHostController) {
                     DetailsScreen(
                         placeId = placeId,
                         onBack = { nav.popBackStack() },
-                        onReview = { nav.navigate(Route.ReviewForm.build(placeId)) },
+                        onReview = { id, lat, lng ->                      // <- recebe os 3
+                            nav.navigate(Route.ReviewForm.build(id, lat, lng))}, // <- usa o id
                         onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) },
                         onOpenAllReviews = { id -> nav.navigate(Route.ReviewsAll.build(id)) }
                     )
                 }
                 composable(
                     route = Route.ReviewForm.route,
-                    arguments = listOf(navArgument("placeId") { type = NavType.StringType })
+                    arguments = listOf(
+                        navArgument("placeId") { type = NavType.StringType },
+                        navArgument("lat")     { type = NavType.StringType; nullable = true; defaultValue = null },
+                        navArgument("lng")     { type = NavType.StringType; nullable = true; defaultValue = null },
+                    )
                 ) { back ->
                     val placeId = back.arguments?.getString("placeId").orEmpty()
+                    val navLat  = back.arguments?.getString("lat")?.toDoubleOrNull()
+                    val navLng  = back.arguments?.getString("lng")?.toDoubleOrNull()
+
                     ReviewFormScreen(
                         placeId = placeId,
+                        navPlaceLat = navLat,            // <- passa para o ecrã
+                        navPlaceLng = navLng,
                         onDone = { nav.popBackStack() },
                         onCancel = { nav.popBackStack() }
                     )

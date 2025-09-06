@@ -14,44 +14,40 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.reviewapp.R
-import com.example.reviewapp.data.models.Place
+import com.example.reviewapp.viewmodels.LeaderboardViewModel
 import kotlin.math.round
 
-/**
- * Secção horizontal para apresentar lugares em cartões consistentes com o leaderboard.
- */
 @Composable
-fun PlaceHorizontalSection(
+fun LeaderboardHorizontalSection(
     title: String,
-    places: List<Place>,
+    rows: List<LeaderboardViewModel.PlaceRow>,
     onPlaceClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier) {
+    Column(modifier.padding(top = 16.dp)) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
-
+        Spacer(Modifier.height(8.dp))
         LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
             contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(places, key = { it.id }) { p ->
-                PlaceCardElevated(place = p, onClick = { onPlaceClick(p.id) })
+            items(rows, key = { it.placeId }) { row ->
+                LeaderboardPlaceCard(row = row, onClick = { onPlaceClick(row.placeId) })
             }
         }
         Spacer(Modifier.height(8.dp))
     }
 }
 
-/** Cartão consistente com o LeaderboardPlaceCard. */
 @Composable
-private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
+private fun LeaderboardPlaceCard(
+    row: LeaderboardViewModel.PlaceRow,
+    onClick: () -> Unit
+) {
     ElevatedCard(
         onClick = onClick,
         modifier = Modifier
@@ -60,12 +56,11 @@ private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
     ) {
         Column(Modifier.padding(12.dp)) {
             Text(
-                text = place.name.ifBlank { "—" },
+                text = row.name.ifBlank { "—" },
                 style = MaterialTheme.typography.titleSmall,
                 maxLines = 2
             )
-
-            place.address?.takeIf { it.isNotBlank() }?.let {
+            row.address?.takeIf { it.isNotBlank() }?.let {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = it,
@@ -73,18 +68,15 @@ private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
                     maxLines = 1
                 )
             }
-
             Spacer(Modifier.height(8.dp))
 
-            RatingRowSimple(
-                rating = place.avgRating,
-                count = place.ratingsCount.takeIf { it > 0 }
-            )
+            // ⭐ + “X.X / 5” + contagem — igual ao Place
+            RatingRowSimple(rating = row.avg, count = row.count)
         }
     }
 }
 
-/** Linha de rating usada tanto aqui como no leaderboard: ⭐ + “X.X / 5” + contagem. */
+/** Linha de rating idêntica à usada no PlaceHorizontalSection. */
 @Composable
 private fun RatingRowSimple(
     rating: Double,
@@ -105,6 +97,6 @@ private fun RatingRowSimple(
 }
 
 private fun ratingToText(value: Double): String {
-    val rounded = round(value * 10) / 10.0 // 1 casa decimal (ex.: 4.3/5)
+    val rounded = round(value * 10) / 10.0
     return "$rounded / 5"
 }

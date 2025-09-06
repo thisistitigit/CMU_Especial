@@ -248,4 +248,18 @@
     <string name="error_too_soon">Ainda não passaram %1$d minutos desde a última avaliação.</string>
     <string name="error_too_soon_live">Aguarda ~%1$d min para nova avaliação.</string>
 
-    </resources>
+
+    <string name="reviews_sort_oldest_first">Mais antigo → recente</string>
+    <string name="reviews_sort_newest_first">Mais recente → antigo</string>
+
+    <string name="reviews_filter_with_photo">Com foto</string>
+    <string name="reviews_filter_only_mine">Só minhas</string>
+    <string name="reviews_filter_min_stars">Mín. estrelas</string>
+    <string name="reviews_filter_any_stars">Qualquer nº de estrelas</string>
+    <string name="reviews_filter_min_stars_value">%1$d★ ou mais</string>
+
+    <string name="reviews_count_filtered">%1$d review(s)</string>
+    <string name="home_best_rated_title">Os nossos utilizadores recomendam</string>
+    <string name="leaderboard_rating_count_inline">%1$d avaliações</string>
+
+</resources>

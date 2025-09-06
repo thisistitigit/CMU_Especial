@@ -26,6 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -34,7 +37,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.ReviewCard
+import com.example.reviewapp.ui.components.ReviewFilterBar
+import com.example.reviewapp.ui.components.ReviewFilterState
+import com.example.reviewapp.ui.components.ReviewSort
 import com.example.reviewapp.ui.components.StarRating
+import com.example.reviewapp.ui.components.applyReviewFilters
 import com.example.reviewapp.viewmodels.DetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +50,7 @@ fun DetailsScreen(
     placeId: String,
     vm: DetailsViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onReview: (String, Double?, Double?) -> Unit = { _,_,_ -> }, // <- muda
+    onReview: (String, Double?, Double?) -> Unit = { _,_,_ -> },
     onOpenReviewDetails: (String) -> Unit = {},
     onOpenAllReviews: (String) -> Unit = {}
 ) {
@@ -51,14 +58,21 @@ fun DetailsScreen(
 
     LaunchedEffect(placeId) { vm.load(placeId) }
 
+    // --- Estado de filtros partilhado na screen ---
+    var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
+    val filteredAll = remember(state.latestReviews, filters) {
+        applyReviewFilters(
+            state.latestReviews,
+            filters,
+            currentUserId = null // TODO: passa aqui o userId real para "Só minhas"
+        )
+    }
+    val filteredTop10 = remember(filteredAll) { filteredAll.take(10) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        state.place?.name ?: stringResource(R.string.details_title)
-                    )
-                },
+                title = { Text(state.place?.name ?: stringResource(R.string.details_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -72,7 +86,7 @@ fun DetailsScreen(
         floatingActionButton = {
             state.place?.let { place ->
                 ExtendedFloatingActionButton(onClick = {
-                    onReview(place.id, place.lat, place.lng)   // <- envia lat/lng daqui
+                    onReview(place.id, place.lat, place.lng)   // envia lat/lng
                 }) {
                     Text(stringResource(R.string.details_review_cta))
                 }
@@ -86,9 +100,7 @@ fun DetailsScreen(
                     modifier = Modifier
                         .padding(padding)
                         .padding(16.dp)
-                ) {
-                    Text(text = stringResource(R.string.state_loading))
-                }
+                ) { Text(text = stringResource(R.string.state_loading)) }
             }
 
             state.error != null -> {
@@ -96,9 +108,7 @@ fun DetailsScreen(
                     modifier = Modifier
                         .padding(padding)
                         .padding(16.dp)
-                ) {
-                    Text(text = stringResource(R.string.state_error))
-                }
+                ) { Text(text = stringResource(R.string.state_error)) }
             }
 
             else -> {
@@ -108,23 +118,13 @@ fun DetailsScreen(
                         // ===== Cabeçalho / Identificação =====
                         item {
                             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                // Categoria / “Doçaria avaliada”
                                 place.category?.takeIf { it.isNotBlank() }?.let { cat ->
-                                    Text(
-                                        text = cat,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Text(text = cat, style = MaterialTheme.typography.bodyMedium)
                                 }
-
-                                // Endereço
                                 place.address?.takeIf { it.isNotBlank() }?.let { addr ->
-                                    Text(
-                                        text = addr,
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Text(text = addr, style = MaterialTheme.typography.bodyMedium)
                                 }
 
-                                // Telefone
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.Start,
@@ -147,7 +147,6 @@ fun DetailsScreen(
                                     }
                                 }
 
-                                // Coordenadas
                                 Text(
                                     text = stringResource(
                                         R.string.place_lat_lng,
@@ -157,7 +156,6 @@ fun DetailsScreen(
                                     style = MaterialTheme.typography.bodySmall
                                 )
 
-                                // Botões de mapa
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -166,24 +164,18 @@ fun DetailsScreen(
                                 ) {
                                     Button(onClick = {
                                         vm.openOnMap(place.lat, place.lng, place.name)
-                                    }) {
-                                        Text(stringResource(R.string.place_view_on_map))
-                                    }
+                                    }) { Text(stringResource(R.string.place_view_on_map)) }
                                     Button(onClick = {
                                         vm.getDirections(place.lat, place.lng)
-                                    }) {
-                                        Text(stringResource(R.string.place_get_directions))
-                                    }
+                                    }) { Text(stringResource(R.string.place_get_directions)) }
                                 }
                             }
-
                             Divider()
                         }
 
                         // ===== Ratings: Google + Interno =====
                         item {
                             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                                // Google (mostrar só se houver contagem > 0)
                                 if (place.ratingsCount > 0) {
                                     Text(
                                         text = stringResource(R.string.ratings_google_title),
@@ -210,7 +202,6 @@ fun DetailsScreen(
                                     Spacer(modifier = Modifier.padding(top = 8.dp))
                                 }
 
-                                // Interno (usar métricas calculadas no VM)
                                 Text(
                                     text = stringResource(R.string.ratings_internal_title),
                                     style = MaterialTheme.typography.titleSmall
@@ -241,12 +232,11 @@ fun DetailsScreen(
                                     )
                                 }
                             }
-
                             Divider()
                         }
 
                         // ===== Secção Reviews =====
-                        // Cabeçalho da secção Reviews (Top 10 + "Ver todos")
+                        // Cabeçalho (Top 10 + Ver todos)
                         item {
                             Row(
                                 modifier = Modifier
@@ -267,7 +257,21 @@ fun DetailsScreen(
                             }
                         }
 
-                        if (state.latestReviews.isEmpty()) {
+                        // Barra de filtros + contagem (aplica a toda a lista, mas a renderização mantém Top 10)
+                        item {
+                            ReviewFilterBar(
+                                state = filters,
+                                onChange = { filters = it }
+                            )
+                            Text(
+                                text = stringResource(R.string.reviews_count_filtered, filteredAll.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        // Lista (Top 10 após filtros)
+                        if (filteredAll.isEmpty()) {
                             item {
                                 Text(
                                     text = stringResource(R.string.reviews_empty),
@@ -276,7 +280,7 @@ fun DetailsScreen(
                                 )
                             }
                         } else {
-                            items(state.latestReviews) { r ->
+                            items(filteredTop10, key = { it.id }) { r ->
                                 ReviewCard(review = r, onClick = { onOpenReviewDetails(r.id) })
                                 Divider()
                             }

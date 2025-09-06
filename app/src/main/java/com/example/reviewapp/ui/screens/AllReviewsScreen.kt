@@ -13,6 +13,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.ReviewCard
+import com.example.reviewapp.ui.components.ReviewFilterBar
+import com.example.reviewapp.ui.components.ReviewFilterState
+import com.example.reviewapp.ui.components.ReviewSort
+import com.example.reviewapp.ui.components.applyReviewFilters
 import com.example.reviewapp.viewmodels.AllReviewsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,6 +54,33 @@ fun AllReviewsScreen(
                 )
             }
             else -> {
+
+                // no conteúdo do Scaffold, ramo "else"
+                var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
+
+                Column {
+                    ReviewFilterBar(
+                        state = filters,
+                        onChange = { filters = it }
+                    )
+
+                    val filtered = applyReviewFilters(
+                        state.reviews,
+                        filters,
+                        currentUserId = null
+                    )
+
+                    LazyColumn(
+                        modifier = Modifier,
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(filtered, key = { it.id }) { r ->
+                            ReviewCard(review = r, onClick = { onOpenReviewDetails(r.id) })
+                            Divider()
+                        }
+                    }
+                }
+
                 LazyColumn(
                     modifier = Modifier.padding(padding),
                     contentPadding = PaddingValues(vertical = 8.dp)

@@ -269,4 +269,9 @@
     <string name="search_sort_distance_asc">Distância (mais perto primeiro)</string>
     <string name="search_sort_rating_count">Mais avaliações Google</string>
 
+
+    <string name="offline_banner_message">Estás offline — a mostrar dados em cache</string>
+    <string name="profile_offline_no_cache">Estás offline e não há dados em cache para o perfil.</string>
+
+
 </resources>

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.StarSelector
 import com.example.reviewapp.utils.MediaStoreUtils
 import com.example.reviewapp.utils.PermissionUtils

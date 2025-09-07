@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
 import com.example.reviewapp.navigation.AppNavGraph
 import com.example.reviewapp.ui.theme.ReviewAppTheme
@@ -24,15 +26,23 @@ class MainActivity : BaseActivity() {
     lateinit var registrar: com.example.reviewapp.geofence.GeofenceRegistrar
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 1) Instalar SplashScreen (Android 12+ gere o resto)
+        val splash: SplashScreen = installSplashScreen()
+
         super.onCreate(savedInstanceState)
+
+        // 2) VOLTAR ao tema normal da app antes de desenhar Compose
+        setTheme(R.style.Theme_ReviewApp)
+
+        // 3) (Opcional) Manter splash enquanto carregas algo (ex.: auth gate)
+        // splash.setKeepOnScreenCondition { /* isLoadingAuth || isSeedingGeofences */ false }
+
         setContent { ReviewAppTheme { AppNavGraph(rememberNavController()) } }
 
-        // 1) Semeadura inicial: regista geofences com a lastLocation (se houver)
         quickSeedGeofences()
-
-        // 2) Passa a manter geofences atualizadas automaticamente por movimento (~500 m)
         startLocationUpdatesForGeofences()
     }
+
 
     /** Regista geofences uma vez com a última localização conhecida (seed inicial). */
     private fun quickSeedGeofences() {

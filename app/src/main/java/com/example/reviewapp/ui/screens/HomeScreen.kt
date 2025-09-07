@@ -3,8 +3,6 @@ package com.example.reviewapp.ui.screens
 import android.content.Context
 import android.location.Geocoder
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -22,8 +20,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.LeaderboardHorizontalSection
 import com.example.reviewapp.ui.components.LocationPermissionGate
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.PlaceHorizontalSection
-import com.example.reviewapp.ui.components.StarRating
 import com.example.reviewapp.viewmodels.LeaderboardViewModel
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.model.LatLng
@@ -37,16 +35,12 @@ private enum class HomeSort { Rating }
 @Composable
 fun HomeScreen(
     vm: SearchViewModel = hiltViewModel(),
-    // novo: vm leaderboard
     leaderboardVm: LeaderboardViewModel = hiltViewModel(),
     onOpenDetails: (String) -> Unit,
-    onOpenReview: (String) -> Unit,
-    onOpenProfile: () -> Unit
 ) {
     val ui by vm.state.collectAsState()
     val lb by leaderboardVm.ui.collectAsState()
 
-    var sort by remember { mutableStateOf(HomeSort.Rating) }
     var query by remember { mutableStateOf("") }
     var isSearching by remember { mutableStateOf(false) }
     var showingSearch by remember { mutableStateOf(false) }
@@ -111,7 +105,7 @@ fun HomeScreen(
         }
     ) { padding ->
         Column(Modifier.padding(padding)) {
-
+            OfflineBanner()
             // header / loading spinner
             Row(
                 Modifier

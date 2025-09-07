@@ -17,6 +17,7 @@
     import androidx.compose.ui.unit.dp
     import androidx.hilt.navigation.compose.hiltViewModel
     import com.example.reviewapp.R
+    import com.example.reviewapp.ui.components.OfflineBanner
     import com.example.reviewapp.viewmodels.LeaderboardViewModel
 
     private const val TAG_CLICK = "LeaderboardClick"
@@ -46,6 +47,7 @@
                     .padding(inner)
                     .fillMaxSize()
             ) {
+                OfflineBanner()
                 TabRow(selectedTabIndex = state.tab.ordinal) {
                     Tab(
                         selected = state.tab == LeaderboardViewModel.Tab.ESTABLISHMENTS,

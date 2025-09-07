@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.HistoryItem
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.viewmodels.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +32,7 @@ fun HistoryScreen(
     onOpenPlaceDetails: (placeId: String) -> Unit
 ) {
     val state by viewModel.ui.collectAsState()
-
+    OfflineBanner()
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.history_title)) }) }
     ) { inner ->

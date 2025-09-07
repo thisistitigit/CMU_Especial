@@ -13,8 +13,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.ReviewCard
 import com.example.reviewapp.ui.components.ReviewFilterBar
 import com.example.reviewapp.ui.components.ReviewFilterState
@@ -122,6 +125,8 @@ fun DetailsScreen(
                         // ===== Cabeçalho / Identificação =====
                         item {
                             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                                OfflineBanner()
+
                                 place.category?.takeIf { it.isNotBlank() }?.let { cat ->
                                     Text(text = cat, style = MaterialTheme.typography.bodyMedium)
                                 }
@@ -140,11 +145,11 @@ fun DetailsScreen(
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                     } else {
-                                        TextButton(onClick = { vm.call(place.phone!!) }) {
+                                        TextButton(onClick = { vm.call(place.phone) }) {
                                             Text(
                                                 text = stringResource(
                                                     R.string.place_call_action_with_number,
-                                                    place.phone!!
+                                                    place.phone
                                                 )
                                             )
                                         }
@@ -174,7 +179,11 @@ fun DetailsScreen(
                                     }) { Text(stringResource(R.string.place_get_directions)) }
                                 }
                             }
-                            Divider()
+                            HorizontalDivider(
+                                Modifier,
+                                DividerDefaults.Thickness,
+                                DividerDefaults.color
+                            )
                         }
 
                         // ===== Ratings: Google + Interno =====

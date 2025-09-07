@@ -2,4 +2,11 @@
 <resources>
     <!-- Tema claro -->
     <style name="Theme.ReviewApp" parent="Theme.Material3.Light" />
+
+
+    <!-- Tema de Splash para < Android 12 -->
+    <style name="Theme.ReviewApp.Splash" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
+
 </resources>

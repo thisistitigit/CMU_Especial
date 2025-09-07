@@ -124,7 +124,7 @@ dependencies {
     implementation(libs.maps.compose)
     implementation(libs.retrofit.gson)
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
-
+    implementation("androidx.core:core-splashscreen:1.0.0")
     // Testes
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

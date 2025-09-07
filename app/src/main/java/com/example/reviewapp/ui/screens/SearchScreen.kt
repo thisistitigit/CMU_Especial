@@ -22,6 +22,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.PlaceListItem
 import com.example.reviewapp.utils.rememberLocationPermissionState
 import com.example.reviewapp.viewmodels.SearchViewModel
@@ -60,13 +61,13 @@ fun SearchScreen(
     val sortedPlaces = remember(state.places, sortState, state.searchCenter) {
         applyPlaceSort(state.places, sortState, state.searchCenter)
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     if (searchActive) {
                         Column(Modifier.fillMaxWidth()) {
+                            OfflineBanner()
                             TextField(
                                 value = query,
                                 onValueChange = { query = it },

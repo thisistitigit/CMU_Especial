@@ -12,6 +12,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.ReviewCard
 import com.example.reviewapp.ui.components.ReviewFilterBar
 import com.example.reviewapp.ui.components.ReviewFilterState
@@ -67,7 +68,7 @@ fun AllReviewsScreen(
                         state = filters,
                         onChange = { filters = it }
                     )
-
+                    OfflineBanner()
                     val filtered = applyReviewFilters(
                         state.reviews,
                         filters,

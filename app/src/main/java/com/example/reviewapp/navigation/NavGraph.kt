@@ -132,8 +132,6 @@ fun AppNavGraph(nav: NavHostController) {
                     HomeScreen(
                         vm = sharedVm,
                         onOpenDetails = { id -> nav.navigate(Route.Details.build(id)) },
-                        onOpenReview  = { id -> nav.navigate(Route.ReviewForm.build(id)) },
-                        onOpenProfile = { nav.navigate(Route.Profile.route) }
                     )
                 }
                 composable(Route.Search.route) { backStackEntry ->

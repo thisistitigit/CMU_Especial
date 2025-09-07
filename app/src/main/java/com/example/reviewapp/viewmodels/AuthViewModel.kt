@@ -2,12 +2,14 @@ package com.example.reviewapp.viewmodels
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import com.example.reviewapp.di.AuthSession
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 data class AppUser(
@@ -21,8 +23,10 @@ data class AppUser(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     val auth: FirebaseAuth,
-    val db: FirebaseFirestore
+    val db: FirebaseFirestore,
+    session: AuthSession
 ) : ViewModel() {
+    val currentUserId: StateFlow<String?> = session.uid
 
     fun login(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
         auth.signInWithEmailAndPassword(email.trim(), password)

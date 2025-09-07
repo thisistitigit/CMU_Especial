@@ -42,6 +42,7 @@ import com.example.reviewapp.ui.components.ReviewFilterState
 import com.example.reviewapp.ui.components.ReviewSort
 import com.example.reviewapp.ui.components.StarRating
 import com.example.reviewapp.ui.components.applyReviewFilters
+import com.example.reviewapp.viewmodels.AuthViewModel
 import com.example.reviewapp.viewmodels.DetailsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,22 +50,25 @@ import com.example.reviewapp.viewmodels.DetailsViewModel
 fun DetailsScreen(
     placeId: String,
     vm: DetailsViewModel = hiltViewModel(),
+    authVm: AuthViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onReview: (String, Double?, Double?) -> Unit = { _,_,_ -> },
     onOpenReviewDetails: (String) -> Unit = {},
     onOpenAllReviews: (String) -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
+    val uid by authVm.currentUserId.collectAsState()
 
     LaunchedEffect(placeId) { vm.load(placeId) }
 
     // --- Estado de filtros partilhado na screen ---
     var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
-    val filteredAll = remember(state.latestReviews, filters) {
+
+    val filteredAll = remember(state.latestReviews, filters, uid) {
         applyReviewFilters(
-            state.latestReviews,
-            filters,
-            currentUserId = null // TODO: passa aqui o userId real para "Só minhas"
+            all = state.latestReviews,
+            f = filters,
+            currentUserId = uid           // ← AGORA PASSAMOS O UID
         )
     }
     val filteredTop10 = remember(filteredAll) { filteredAll.take(10) }

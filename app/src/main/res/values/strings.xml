@@ -262,4 +262,11 @@
     <string name="home_best_rated_title">Os nossos utilizadores recomendam</string>
     <string name="leaderboard_rating_count_inline">%1$d avaliações</string>
 
+    <string name="search_filter_button">Filtro</string>
+    <string name="search_sort_header">Ordenar por</string>
+    <string name="search_sort_default">Predefinido</string>
+    <string name="search_sort_google_rating">Avaliação Google</string>
+    <string name="search_sort_distance_asc">Distância (mais perto primeiro)</string>
+    <string name="search_sort_rating_count">Mais avaliações Google</string>
+
 </resources>

@@ -22,7 +22,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
-import com.example.reviewapp.ui.components.PermissionBanner
 import com.example.reviewapp.ui.components.PlaceListItem
 import com.example.reviewapp.utils.rememberLocationPermissionState
 import com.example.reviewapp.viewmodels.SearchViewModel
@@ -34,6 +33,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.example.reviewapp.ui.components.PlaceSortButton
+import com.example.reviewapp.ui.components.PlaceSortState
+import com.example.reviewapp.ui.components.PlaceSort
+import com.example.reviewapp.ui.components.applyPlaceSort
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,17 +47,19 @@ fun SearchScreen(
 ) {
     val ctx = LocalContext.current
     val state by vm.state.collectAsState()
+    val perm = rememberLocationPermissionState(onGranted = { /* no-op */ })
 
-    // IMPORTANTE: não recentrar automaticamente ao (re)entrar no ecrã
-    // Mantemos a permissão, mas sem vm.refresh() no onGranted.
-    val perm = rememberLocationPermissionState(onGranted = { /* no-op: não recentrar */ })
-
-    // --- TopBar state (pesquisa + filtro) ---
     var searchActive by remember { mutableStateOf(false) }
     var query by remember { mutableStateOf("") }
     var showFilter by remember { mutableStateOf(false) }
     var geocodingInFlight by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    // --- NOVO: estado de ordenação para a lista
+    var sortState by remember { mutableStateOf(PlaceSortState(selected = PlaceSort.GOOGLE_RATING)) }
+    val sortedPlaces = remember(state.places, sortState, state.searchCenter) {
+        applyPlaceSort(state.places, sortState, state.searchCenter)
+    }
 
     Scaffold(
         topBar = {
@@ -88,7 +93,6 @@ fun SearchScreen(
                     }
                 },
                 actions = {
-                    // ícone de pesquisa (toggle + executar se já ativo)
                     IconButton(onClick = {
                         if (searchActive && query.isNotBlank()) {
                             scope.launch {
@@ -97,14 +101,12 @@ fun SearchScreen(
                                 geocodingInFlight = false
                                 latLng?.let { vm.refreshAt(it, radiusMeters = state.radiusMeters) }
                             }
-                        } else {
-                            searchActive = true
-                        }
+                        } else searchActive = true
                     }) {
                         Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
                     }
 
-                    // ícone de filtro subtil
+                    // Mantém o filtro de raio já existente no TopAppBar
                     Box {
                         IconButton(onClick = { showFilter = true }) {
                             Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.action_filter))
@@ -145,7 +147,6 @@ fun SearchScreen(
                 Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
             }
         }
-
     ) { padding ->
         Column(Modifier.padding(padding)) {
 
@@ -225,7 +226,22 @@ fun SearchScreen(
 
             // ====== LISTA ======
             LazyColumn(Modifier.fillMaxSize()) {
-                items(state.places) { p ->
+                // ---- CABEÇALHO DA LISTA: botão de Filtro (ordenar) à direita ----
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        PlaceSortButton(
+                            state = sortState,
+                            onChange = { sortState = it }
+                        )
+                    }
+                }
+
+                items(sortedPlaces) { p ->
                     Column(Modifier.fillMaxWidth()) {
                         PlaceListItem(place = p, onClick = { onOpenDetails(p.id) })
                         Row(

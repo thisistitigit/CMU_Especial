@@ -18,16 +18,19 @@ import com.example.reviewapp.ui.components.ReviewFilterState
 import com.example.reviewapp.ui.components.ReviewSort
 import com.example.reviewapp.ui.components.applyReviewFilters
 import com.example.reviewapp.viewmodels.AllReviewsViewModel
+import com.example.reviewapp.viewmodels.AuthViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllReviewsScreen(
     placeId: String,
     vm: AllReviewsViewModel = hiltViewModel(),
+    authVm: AuthViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
     onOpenReviewDetails: (String) -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
+    val uid by authVm.currentUserId.collectAsState()
 
     LaunchedEffect(placeId) { vm.load(placeId) }
 
@@ -56,6 +59,7 @@ fun AllReviewsScreen(
             else -> {
 
                 // no conteúdo do Scaffold, ramo "else"
+
                 var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
 
                 Column {
@@ -67,7 +71,7 @@ fun AllReviewsScreen(
                     val filtered = applyReviewFilters(
                         state.reviews,
                         filters,
-                        currentUserId = null
+                        currentUserId = uid
                     )
 
                     LazyColumn(

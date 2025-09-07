@@ -159,7 +159,7 @@
     <!-- Filtro / pesquisa -->
     <string name="action_filter">Filtrar</string>
     <string name="filter_radius_title">Raio de pesquisa</string>
-    <string name="search_location_hint">Pesquisar local (morada, cidade…)</string>
+    <string name="search_location_hint">Pesquisar local</string>
     <string name="search_here">Pesquisar aqui</string>
     <string name="drag_to_move_map">Arrasta o mapa para mudar a zona</string>
     <string name="action_search">Pesquisar</string>

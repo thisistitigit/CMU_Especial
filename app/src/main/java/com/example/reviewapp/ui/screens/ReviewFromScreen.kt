@@ -1,3 +1,4 @@
+// com/example/reviewapp/ui/screens/ReviewFormScreen.kt
 package com.example.reviewapp.ui.screens
 
 import android.content.Context
@@ -8,17 +9,22 @@ import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.AppHeader
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.StarSelector
 import com.example.reviewapp.utils.MediaStoreUtils
@@ -29,6 +35,7 @@ import com.example.reviewapp.viewmodels.ReviewFormViewModel
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
@@ -49,6 +56,13 @@ fun ReviewFormScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // ouvir o evento Submitted → fechar
+    LaunchedEffect(Unit) {
+        vm.events.collect { ev ->
+            if (ev is ReviewFormViewModel.Event.Submitted) onDone()
+        }
+    }
+
     val uid = authVm.auth.currentUser?.uid
     var username by remember { mutableStateOf<String?>(null) }
     var loadingUser by remember { mutableStateOf(true) }
@@ -58,7 +72,8 @@ fun ReviewFormScreen(
         try {
             val snap = authVm.db.collection("users").document(uid).get().await()
             val fetched = snap.getString("username")
-                ?: authVm.auth.currentUser?.displayName ?: context.getString(R.string.user_generic)
+                ?: authVm.auth.currentUser?.displayName
+                ?: context.getString(R.string.user_generic)
             username = fetched
             vm.init(placeId = placeId, userId = uid, userName = fetched)
             vm.warmupRules(distanceMeters = null)
@@ -134,16 +149,30 @@ fun ReviewFormScreen(
     ) { uri: Uri? -> uri?.let { vm.setPhotoLocalPath(it.toString()) } }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.review_new_title)) },
-                navigationIcon = { IconButton(onClick = onCancel) { Icon(Icons.Filled.ArrowBack, null) } }
+            AppHeader(
+                title = stringResource(R.string.review_new_title),
+                onBack = onCancel
             )
         }
     ) { padding ->
-        Column(Modifier.padding(padding).padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OfflineBanner()
+
             when {
-                loadingUser -> { CircularProgressIndicator(); return@Column }
+                loadingUser -> {
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    return@Column
+                }
                 uid == null -> {
                     Text(stringResource(R.string.error_not_authenticated), color = MaterialTheme.colorScheme.error)
                     return@Column
@@ -154,83 +183,127 @@ fun ReviewFormScreen(
                 }
             }
 
-            if (!state.photoLocalPath.isNullOrBlank()) {
-                AsyncImage(
-                    model = state.photoLocalPath,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxWidth().height(180.dp)
-                )
-                Spacer(Modifier.height(8.dp))
-                TextButton(onClick = { vm.setPhotoLocalPath(null) }) {
-                    Text(stringResource(R.string.action_remove_photo))
-                }
-                Spacer(Modifier.height(12.dp))
-            }
-
-            OutlinedTextField(
-                value = state.pastryName,
-                onValueChange = vm::onPastryChanged,
-                label = { Text(stringResource(R.string.field_pastry)) },
+            ElevatedCard(
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor   = MaterialTheme.colorScheme.onSurface
+                ),
                 modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(8.dp))
-            StarSelector(selected = state.stars, onChange = vm::onStarsChanged)
-            Spacer(Modifier.height(8.dp))
-            OutlinedTextField(
-                value = state.comment,
-                onValueChange = vm::onCommentChanged,
-                label = { Text(stringResource(R.string.field_comment)) },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(12.dp))
+            ) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-            Row {
-                Button(onClick = {
-                    val uri = MediaStoreUtils.createImageUri(context)
-                    if (uri != null) {
-                        pendingCaptureUri = uri
-                        if (PermissionUtils.hasCameraPermission(context)) {
-                            takePicture.launch(uri)
-                        } else {
-                            requestCameraPermission.launch(android.Manifest.permission.CAMERA)
+                    // Foto (preview)
+                    if (!state.photoLocalPath.isNullOrBlank()) {
+                        AsyncImage(
+                            model = state.photoLocalPath,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(180.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                        )
+                        TextButton(onClick = { vm.setPhotoLocalPath(null) }) {
+                            Text(stringResource(R.string.action_remove_photo))
                         }
                     }
-                }) { Text(stringResource(R.string.action_take_photo)) }
 
-                Spacer(Modifier.width(12.dp))
+                    // Doce / Pastel
+                    OutlinedTextField(
+                        value = state.pastryName,
+                        onValueChange = vm::onPastryChanged,
+                        label = { Text(stringResource(R.string.field_pastry)) },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                Button(onClick = { pickImage.launch("image/*") }) {
-                    Text(stringResource(R.string.action_pick_gallery))
+                    // Estrelas
+                    StarSelector(selected = state.stars, onChange = vm::onStarsChanged)
+
+                    // Comentário
+                    OutlinedTextField(
+                        value = state.comment,
+                        onValueChange = vm::onCommentChanged,
+                        label = { Text(stringResource(R.string.field_comment)) },
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Ações de imagem
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(
+                            onClick = {
+                                val uri = MediaStoreUtils.createImageUri(context)
+                                if (uri != null) {
+                                    pendingCaptureUri = uri
+                                    if (PermissionUtils.hasCameraPermission(context)) {
+                                        takePicture.launch(uri)
+                                    } else {
+                                        requestCameraPermission.launch(android.Manifest.permission.CAMERA)
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(Icons.Filled.PhotoCamera, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_take_photo))
+                        }
+                        FilledTonalButton(
+                            onClick = { pickImage.launch("image/*") },
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(Icons.Filled.Image, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(R.string.action_pick_gallery))
+                        }
+                    }
+
+                    // Submeter
+                    Button(
+                        enabled = state.canSubmit && state.rulesOk && !state.isSubmitting,
+                        onClick = { scope.launch { vm.submit() } },
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (state.isSubmitting) {
+                            CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                        } else {
+                            Text(stringResource(R.string.action_submit))
+                        }
+                    }
+
+                    // Mensagem de regras/erros
+                    if (!state.rulesOk || state.ruleMessage != null) {
+                        Text(
+                            text = when (state.ruleMessage) {
+                                "hint_grant_location_permission" -> stringResource(R.string.hint_grant_location_permission)
+                                "hint_enable_gps" -> stringResource(R.string.hint_enable_gps)
+                                "hint_fetching_location" -> stringResource(R.string.hint_fetching_location)
+                                "error_too_far" -> stringResource(
+                                    R.string.error_too_far, ReviewRules.MIN_DISTANCE_METERS.toInt()
+                                )
+                                "error_too_far_live" -> stringResource(
+                                    R.string.error_too_far_live,
+                                    (state.distanceMeters ?: 0.0).toInt(),
+                                    ReviewRules.MIN_DISTANCE_METERS.toInt()
+                                )
+                                "error_too_soon" -> stringResource(R.string.error_too_soon, ReviewRules.MIN_INTERVAL_MINUTES)
+                                "error_too_soon_live" -> stringResource(R.string.error_too_soon_live, ReviewRules.MIN_INTERVAL_MINUTES)
+                                "error_enable_location" -> stringResource(R.string.error_enable_location)
+                                "error_fill_fields" -> stringResource(R.string.error_fill_fields)
+                                "error_submit_generic" -> stringResource(R.string.error_submit_generic)
+                                "error_not_authenticated" -> stringResource(R.string.error_not_authenticated)
+                                else -> stringResource(R.string.rules_not_met)
+                            },
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Button(
-                enabled = state.canSubmit && state.rulesOk && !state.isSubmitting,
-                onClick = { scope.launch { if (vm.submit()) onDone() } }
-            ) { Text(stringResource(R.string.action_submit)) }
-
-            if (!state.rulesOk || state.ruleMessage != null) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = when (state.ruleMessage) {
-                        "hint_grant_location_permission" -> stringResource(R.string.hint_grant_location_permission)
-                        "hint_enable_gps" -> stringResource(R.string.hint_enable_gps)
-                        "hint_fetching_location" -> stringResource(R.string.hint_fetching_location)
-                        "error_too_far" -> stringResource(R.string.error_too_far, ReviewRules.MIN_DISTANCE_METERS.toInt())
-                        "error_too_far_live" -> stringResource(R.string.error_too_far_live,
-                            (state.distanceMeters ?: 0.0).toInt(), ReviewRules.MIN_DISTANCE_METERS.toInt())
-                        "error_too_soon" -> stringResource(R.string.error_too_soon, ReviewRules.MIN_INTERVAL_MINUTES)
-                        "error_too_soon_live" -> stringResource(R.string.error_too_soon_live, ReviewRules.MIN_INTERVAL_MINUTES)
-                        "error_enable_location" -> stringResource(R.string.error_enable_location)
-                        "error_fill_fields" -> stringResource(R.string.error_fill_fields)
-                        "error_submit_generic" -> stringResource(R.string.error_submit_generic)
-                        "error_not_authenticated" -> stringResource(R.string.error_not_authenticated)
-                        else -> stringResource(R.string.rules_not_met)
-                    },
-                    color = MaterialTheme.colorScheme.error
-                )
             }
         }
     }
@@ -253,16 +326,16 @@ private suspend fun getOneShotLocation(
 
     return withTimeoutOrNull(timeoutMs) {
         suspendCancellableCoroutine<Location?> { cont ->
-            val req = LocationRequest.Builder(priority, 0L).setMinUpdateIntervalMillis(0).setMaxUpdates(1).build()
+            val req = LocationRequest.Builder(priority, 0L)
+                .setMinUpdateIntervalMillis(0).setMaxUpdates(1).build()
             val cb = object : com.google.android.gms.location.LocationCallback() {
                 override fun onLocationResult(res: com.google.android.gms.location.LocationResult) {
                     if (!cont.isCompleted) cont.resume(res.lastLocation, onCancellation = null)
                     fused.removeLocationUpdates(this)
                 }
             }
-            try { fused.requestLocationUpdates(req, cb, Looper.getMainLooper()) } catch (_: SecurityException) {
-                if (!cont.isCompleted) cont.resume(null, onCancellation = null)
-            }
+            try { fused.requestLocationUpdates(req, cb, Looper.getMainLooper()) }
+            catch (_: SecurityException) { if (!cont.isCompleted) cont.resume(null, onCancellation = null) }
             cont.invokeOnCancellation { fused.removeLocationUpdates(cb) }
         }
     }

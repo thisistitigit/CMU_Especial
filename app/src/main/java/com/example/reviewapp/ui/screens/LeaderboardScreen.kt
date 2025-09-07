@@ -1,16 +1,21 @@
 package com.example.reviewapp.ui.screens
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -19,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.AppHeader
 import com.example.reviewapp.ui.components.OfflineBanner
+import com.example.reviewapp.ui.components.RatingRow
 import com.example.reviewapp.viewmodels.LeaderboardViewModel
 
 private const val TAG_CLICK = "LeaderboardClick"
@@ -32,6 +38,7 @@ fun LeaderboardScreen(
     val state by viewModel.ui.collectAsState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             AppHeader(
                 title = stringResource(R.string.leaderboard_title),
@@ -56,22 +63,40 @@ fun LeaderboardScreen(
             modifier = Modifier
                 .padding(inner)
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
         ) {
             OfflineBanner()
 
-            TabRow(selectedTabIndex = state.tab.ordinal) {
-                Tab(
-                    selected = state.tab == LeaderboardViewModel.Tab.ESTABLISHMENTS,
-                    onClick = { viewModel.onSelectTab(LeaderboardViewModel.Tab.ESTABLISHMENTS) },
-                    text = { Text(stringResource(R.string.leaderboard_tab_establishments)) }
-                )
-                Tab(
-                    selected = state.tab == LeaderboardViewModel.Tab.PASTRIES,
-                    onClick = { viewModel.onSelectTab(LeaderboardViewModel.Tab.PASTRIES) },
-                    text = { Text(stringResource(R.string.leaderboard_tab_pastries)) }
-                )
+            // ---- Segmented control (tabs) arredondado ----
+            val tabs = listOf(
+                R.string.leaderboard_tab_establishments to LeaderboardViewModel.Tab.ESTABLISHMENTS,
+                R.string.leaderboard_tab_pastries       to LeaderboardViewModel.Tab.PASTRIES
+            )
+            SingleChoiceSegmentedButtonRow(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth()
+            ) {
+                tabs.forEachIndexed { index, (labelRes, tab) ->
+                    SegmentedButton(
+                        selected = state.tab == tab,
+                        onClick = { viewModel.onSelectTab(tab) },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = tabs.size),
+                        colors = SegmentedButtonDefaults.colors(
+                            activeContainerColor   = MaterialTheme.colorScheme.primaryContainer,
+                            activeContentColor     = MaterialTheme.colorScheme.onPrimaryContainer,
+                            inactiveContainerColor = MaterialTheme.colorScheme.surface,
+                            inactiveContentColor   = MaterialTheme.colorScheme.onSurface,
+                            disabledActiveContainerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                            disabledActiveContentColor   = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(stringResource(labelRes), style = MaterialTheme.typography.labelLarge)
+                    }
+                }
             }
 
+            // ---- Conteúdo ----
             when {
                 state.isLoading -> Box(
                     Modifier
@@ -102,6 +127,8 @@ fun LeaderboardScreen(
     }
 }
 
+/* ===================== LISTAS ===================== */
+
 @Composable
 private fun EstablishmentsList(
     items: List<LeaderboardViewModel.PlaceRow>,
@@ -113,27 +140,28 @@ private fun EstablishmentsList(
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         itemsIndexed(
             items,
             key = { _, it -> it.placeId.trim() }
         ) { index, row ->
-            LeaderboardCard(
+            LeaderboardCardModern(
                 rank = index + 1,
                 title = row.name,
-                subtitle = row.address ?: "",
-                metrics = "${"%.2f".format(row.avg)} ★ · ${row.count} ${stringResource(R.string.reviews_short)}",
+                subtitle = row.address.orEmpty(),
+                avg = row.avg,
+                count = row.count,
                 onClick = {
                     val id = row.placeId.trim()
                     Log.d(
                         TAG_CLICK,
-                        "clicked rank=${index + 1}, placeId='$id' (raw='${row.placeId}'), name='${row.name}', reviews=${row.count}"
+                        "clicked rank=${index + 1}, placeId='$id', name='${row.name}', reviews=${row.count}"
                     )
                     onPlaceClick(id)
                 }
             )
-            Divider()
         }
     }
 }
@@ -146,66 +174,107 @@ private fun PastriesList(items: List<LeaderboardViewModel.PastryRow>) {
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(vertical = 8.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         itemsIndexed(items, key = { _, it -> it.pastryName }) { index, row ->
-            LeaderboardCard(
+            LeaderboardCardModern(
                 rank = index + 1,
                 title = row.pastryName,
                 subtitle = stringResource(R.string.pastry_label),
-                metrics = "${"%.2f".format(row.avg)} ★ · ${row.count} ${stringResource(R.string.reviews_short)}"
+                avg = row.avg,
+                count = row.count
             )
-            Divider()
         }
     }
 }
 
+/* ===================== CARD MODERNO ===================== */
+
 @Composable
-private fun LeaderboardCard(
+private fun LeaderboardCardModern(
     rank: Int,
     title: String,
     subtitle: String,
-    metrics: String,
+    avg: Double,
+    count: Int,
     onClick: (() -> Unit)? = null
 ) {
-    ListItem(
-        headlineContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+    ElevatedCard(
+        onClick = { onClick?.invoke() },
+        enabled = onClick != null,
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor   = MaterialTheme.colorScheme.onSurface
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Rank badge redondo
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = "#$rank",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.widthIn(min = 40.dp)
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontWeight = FontWeight.SemiBold
                 )
-                Column(Modifier.padding(start = 8.dp)) {
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            // Título + endereço + rating
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                if (subtitle.isNotBlank()) {
                     Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    if (subtitle.isNotBlank()) {
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
                 }
+                Spacer(Modifier.height(6.dp))
+                RatingRow(rating = avg, count = count)
             }
-        },
-        supportingContent = { Text(metrics) },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .let { m -> if (onClick != null) m.clickable { onClick() } else m }
-    )
+
+            Spacer(Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
+
+/* ===================== EMPTY ===================== */
 
 @Composable
 private fun EmptyState(text: String) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
     }
 }

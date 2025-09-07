@@ -18,6 +18,7 @@ import com.example.reviewapp.ui.components.AppHeader
 import com.example.reviewapp.ui.components.AppLanguageIconButton
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.rememberIsOnline
+import com.example.reviewapp.ui.theme.AppTheme
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
 
@@ -72,17 +73,13 @@ fun ProfileScreen(
                     AppLanguageIconButton()
 
                     // Logout (ícone)
-                    IconButton(
-                        onClick = {
-                            authViewModel.signOut()
-                            onLogout()
-                        }
-                    ) {
+                    IconButton(onClick = onLogout) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.Logout,
-                            contentDescription = stringResource(R.string.action_logout)
+                            contentDescription = stringResource(R.string.action_logout),
+                            tint = AppTheme.colors.logout
                         )
-                    }
+                }
                 }
             )
         }

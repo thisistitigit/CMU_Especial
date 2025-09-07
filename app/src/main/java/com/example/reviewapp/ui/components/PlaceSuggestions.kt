@@ -5,21 +5,15 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.example.reviewapp.R
 import com.example.reviewapp.data.models.Place
 import kotlin.math.round
 
-/**
- * Secção horizontal para apresentar lugares em cartões consistentes com o leaderboard.
- */
 @Composable
 fun PlaceHorizontalSection(
     title: String,
@@ -31,6 +25,7 @@ fun PlaceHorizontalSection(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
@@ -49,20 +44,25 @@ fun PlaceHorizontalSection(
     }
 }
 
-/** Cartão consistente com o LeaderboardPlaceCard. */
 @Composable
 private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
     ElevatedCard(
         onClick = onClick,
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
         modifier = Modifier
             .width(240.dp)
-            .heightIn(min = 96.dp)
+            .heightIn(min = 108.dp)
     ) {
         Column(Modifier.padding(12.dp)) {
             Text(
                 text = place.name.ifBlank { "—" },
                 style = MaterialTheme.typography.titleSmall,
-                maxLines = 2
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
             )
 
             place.address?.takeIf { it.isNotBlank() }?.let {
@@ -70,41 +70,16 @@ private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             Spacer(Modifier.height(8.dp))
-
-            RatingRowSimple(
+            RatingRow(
                 rating = place.avgRating,
                 count = place.ratingsCount.takeIf { it > 0 }
             )
         }
     }
-}
-
-/** Linha de rating usada tanto aqui como no leaderboard: ⭐ + “X.X / 5” + contagem. */
-@Composable
-private fun RatingRowSimple(
-    rating: Double,
-    count: Int?
-) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.material3.Icon(Icons.Filled.Star, contentDescription = null)
-        Spacer(Modifier.width(6.dp))
-        Text(text = ratingToText(rating), style = MaterialTheme.typography.bodyMedium)
-        count?.let {
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.leaderboard_rating_count_inline, it),
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-    }
-}
-
-private fun ratingToText(value: Double): String {
-    val rounded = round(value * 10) / 10.0 // 1 casa decimal (ex.: 4.3/5)
-    return "$rounded / 5"
 }

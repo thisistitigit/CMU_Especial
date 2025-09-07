@@ -38,7 +38,6 @@ fun PlaceListItem(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        // rating à direita
         Text(
             text = "%.1f★".format(place.avgRating),
             style = MaterialTheme.typography.bodyMedium,

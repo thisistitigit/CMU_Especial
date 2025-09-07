@@ -6,9 +6,11 @@ import com.example.reviewapp.data.models.Review
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.utils.ReviewRules
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -48,7 +50,9 @@ class ReviewFormViewModel @Inject constructor(
         _state.update { it.copy(placeId = placeId, userId = userId, userName = userName) }
         recompute()
     }
-
+    sealed interface Event { data object Submitted : Event }
+    private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
     fun onPastryChanged(value: String) { _state.update { it.copy(pastryName = value) }; recompute() }
     fun onStarsChanged(value: Int) { _state.update { it.copy(stars = value.coerceIn(0, 5)) }; recompute() }
     fun onCommentChanged(value: String) { _state.update { it.copy(comment = value) }; recompute() }
@@ -67,6 +71,7 @@ class ReviewFormViewModel @Inject constructor(
     fun setLocLoading(loading: Boolean) { _state.update { it.copy(isLocLoading = loading) }; recompute() }
     fun setLocationPermission(has: Boolean) { _state.update { it.copy(hasLocationPermission = has) }; recompute() }
     fun setLocationEnabled(enabled: Boolean) { _state.update { it.copy(isLocationEnabled = enabled) }; recompute() }
+
 
     suspend fun submit(): Boolean {
         val s = _state.value
@@ -97,6 +102,10 @@ class ReviewFormViewModel @Inject constructor(
 
         return try {
             reviewRepo.addReview(review, userLat = lat, userLng = lng, now = now)
+
+            // emite o evento de sucesso (antes ou depois de limpar o formulário)
+            _events.tryEmit(Event.Submitted)
+
             _state.update {
                 it.copy(
                     pastryName = "", stars = 0, comment = "",
@@ -116,7 +125,6 @@ class ReviewFormViewModel @Inject constructor(
             false
         }
     }
-
     private fun recompute() {
         val s = _state.value
         val now = System.currentTimeMillis()

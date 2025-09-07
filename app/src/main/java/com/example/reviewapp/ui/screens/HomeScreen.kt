@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.AppHeader
 import com.example.reviewapp.ui.components.LeaderboardHorizontalSection
 import com.example.reviewapp.ui.components.LocationPermissionGate
 import com.example.reviewapp.ui.components.OfflineBanner
@@ -60,52 +61,60 @@ fun HomeScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    TextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        singleLine = true,
-                        placeholder = { Text(stringResource(R.string.search_location_hint)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (query.isNotBlank()) {
-                                IconButton(onClick = { query = ""; showingSearch = false }) {
-                                    Icon(
-                                        Icons.Filled.Clear,
-                                        contentDescription = stringResource(R.string.action_clear)
-                                    )
-                                }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(
-                            onSearch = {
-                                if (query.isBlank()) return@KeyboardActions
-                                scope.launch {
-                                    isSearching = true
-                                    val latLng = geocodeFirstLatLng(ctx, query)
-                                    isSearching = false
-                                    if (latLng != null) {
-                                        vm.refreshAt(latLng)
-                                        showingSearch = true
-                                    }
-                                }
-                            }
-                        ),
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        )
-                    )
-                }
-            )
-        }
+        topBar = { AppHeader(title = stringResource(R.string.home_title)) }
     ) { padding ->
-        Column(Modifier.padding(padding)) {
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+
+            // === Barra de pesquisa (logo abaixo do header) ===
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    placeholder = { Text(stringResource(R.string.search_location_hint)) },
+                    leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                    trailingIcon = {
+                        if (query.isNotBlank()) {
+                            IconButton(onClick = { query = ""; showingSearch = false }) {
+                                Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.action_clear))
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            if (query.isBlank()) return@KeyboardActions
+                            scope.launch {
+                                isSearching = true
+                                val latLng = geocodeFirstLatLng(ctx, query)
+                                isSearching = false
+                                if (latLng != null) {
+                                    vm.refreshAt(latLng)
+                                    showingSearch = true
+                                }
+                            }
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            }
+
+            // Banner offline
             OfflineBanner()
+
             // header / loading spinner
             Row(
                 Modifier
@@ -158,11 +167,11 @@ fun HomeScreen(
                     }
                 }
 
-                // NOVO: Ranking (top avaliações) — usa LeaderboardViewModel.establishments
+                // Ranking (top avaliações)
                 val topRated = lb.establishments.take(12) // top 12
                 if (topRated.isNotEmpty()) {
                     LeaderboardHorizontalSection(
-                        title = stringResource(R.string.home_best_rated_title), // adiciona esta string
+                        title = stringResource(R.string.home_best_rated_title),
                         rows = topRated,
                         onPlaceClick = onOpenDetails
                     )

@@ -8,65 +8,79 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
-// Paleta ReviewApp (inspirada no TheFork)
-val ReviewGreen        = Color(0xFF2ECC71)
-val ReviewGreenDark    = Color(0xFF27AE60)
-val ReviewGreenLight   = Color(0xFF6EE7B7)
+private val LightColors = lightColorScheme(
+    // Brand primária/secondary
+    primary              = BrandMagenta,
+    onPrimary            = Color.White,
+    primaryContainer     = MagentaContainerLight,
+    onPrimaryContainer   = OnMagentaContainer,
 
-val ReviewSurfaceLight = Color(0xFFFFFFFF)
-val ReviewSurfaceDark  = Color(0xFF232323)
+    secondary            = BrandLilac,
+    onSecondary          = Color.White,
+    secondaryContainer   = LilacContainerLight,
+    onSecondaryContainer = OnLilacContainer,
 
-val ReviewBgLight      = Color(0xFFF8FAF9)
-val ReviewBgDark       = Color(0xFF2F2F2F)
+    // Fundo e superfícies
+    background           = BrandCream,          // cream/beige como fundo global
+    onBackground         = BrandBlack,
+    surface              = NeutralSurfaceLight, // cartões, barras, etc.
+    onSurface            = NeutralOnLight,
+    surfaceVariant       = Color(0xFFE7E0EC),
+    onSurfaceVariant     = Color(0xFF49454F),
 
-val ReviewOnDark       = Color(0xFFEDEDED)
-val ReviewOnLight      = Color(0xFF141414)
-
-val ReviewAccent       = Color(0xFF66BB6A)
-private val LightColorScheme = lightColorScheme(
-    primary = ReviewGreen,
-    onPrimary = androidx.compose.ui.graphics.Color.White,
-    primaryContainer = ReviewGreenLight,
-    onPrimaryContainer = ReviewOnLight,
-    secondary = ReviewAccent,
-    surface = ReviewSurfaceLight,
-    onSurface = ReviewOnLight,
-    background = ReviewBgLight,
-    onBackground = ReviewOnLight
+    // Outros
+    outline              = OutlineVariantLight,
+    error                = Color(0xFFB00020),
+    onError              = Color.White
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = ReviewGreen,
-    onPrimary = androidx.compose.ui.graphics.Color.Black,
-    primaryContainer = ReviewGreenDark,
-    onPrimaryContainer = ReviewOnDark,
-    secondary = ReviewAccent,
-    surface = ReviewSurfaceDark,
-    onSurface = ReviewOnDark,
-    background = ReviewBgDark,
-    onBackground = ReviewOnDark
+private val DarkColors = darkColorScheme(
+    primary              = BrandLilac,
+    onPrimary            = Color.White,
+    primaryContainer     = Color(0xFF5E1136),
+    onPrimaryContainer   = Color(0xFFFFD9E2),
+
+    secondary            = BrandLilac,
+    onSecondary          = Color.Black,
+    secondaryContainer   = Color(0xFF3B1E6D),
+    onSecondaryContainer = Color(0xFFEADDFF),
+
+    background           = BrandBlack,
+    onBackground         = NeutralOnDark,
+    surface              = NeutralSurfaceDark,
+    onSurface            = NeutralOnDark,
+    surfaceVariant       = Color(0xFF49454F),
+    onSurfaceVariant     = Color(0xFFCAC4D0),
+
+    outline              = OutlineVariantDark,
+    error                = Color(0xFFFF6B6B),
+    onError              = Color.Black
 )
 
+/**
+ * Tema ÚNICO da app. Mantém a identidade (magenta/lilás/preto/cream).
+ * Por defeito desligo dynamicColor para não “quebrar” a tua paleta.
+ */
 @Composable
 fun ReviewAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false, // <- mantém a paleta da marca por defeito
     content: @Composable () -> Unit
 ) {
-    val colorScheme =
+    val scheme =
         if (dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            val ctx = LocalContext.current
+            if (darkTheme) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
         } else {
-            if (darkTheme) DarkColorScheme else LightColorScheme
+            if (darkTheme) DarkColors else LightColors
         }
 
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = scheme,
+        typography  = Typography,   // podes manter o teu Typography.kt
+        content     = content
     )
 }

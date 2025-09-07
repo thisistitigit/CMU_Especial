@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Search
@@ -22,8 +23,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.AppHeader
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.PlaceListItem
+import com.example.reviewapp.ui.components.PlaceSort
+import com.example.reviewapp.ui.components.PlaceSortButton
+import com.example.reviewapp.ui.components.PlaceSortState
+import com.example.reviewapp.ui.components.applyPlaceSort
 import com.example.reviewapp.utils.rememberLocationPermissionState
 import com.example.reviewapp.viewmodels.SearchViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -34,10 +40,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.example.reviewapp.ui.components.PlaceSortButton
-import com.example.reviewapp.ui.components.PlaceSortState
-import com.example.reviewapp.ui.components.PlaceSort
-import com.example.reviewapp.ui.components.applyPlaceSort
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -56,87 +58,45 @@ fun SearchScreen(
     var geocodingInFlight by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // --- NOVO: estado de ordenação para a lista
+    // Ordenação
     var sortState by remember { mutableStateOf(PlaceSortState(selected = PlaceSort.GOOGLE_RATING)) }
     val sortedPlaces = remember(state.places, sortState, state.searchCenter) {
         applyPlaceSort(state.places, sortState, state.searchCenter)
     }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    if (searchActive) {
-                        Column(Modifier.fillMaxWidth()) {
-                            OfflineBanner()
-                            TextField(
-                                value = query,
-                                onValueChange = { query = it },
-                                singleLine = true,
-                                placeholder = { Text(stringResource(R.string.search_location_hint)) },
-                                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                                textStyle = LocalTextStyle.current,
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                                )
-                            )
-                            if (geocodingInFlight) {
-                                LinearProgressIndicator(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 4.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        Text(stringResource(R.string.search_title))
-                    }
-                },
+            AppHeader(
+                title = stringResource(R.string.search_title),
                 actions = {
-                    IconButton(onClick = {
-                        if (searchActive && query.isNotBlank()) {
-                            scope.launch {
-                                geocodingInFlight = true
-                                val latLng = geocodeFirstLatLng(ctx, query)
-                                geocodingInFlight = false
-                                latLng?.let { vm.refreshAt(it, radiusMeters = state.radiusMeters) }
-                            }
-                        } else searchActive = true
-                    }) {
+                    // Header: só abre/fecha o campo (não pesquisa)
+                    IconButton(onClick = { searchActive = !searchActive }) {
                         Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
                     }
 
-                    // Mantém o filtro de raio já existente no TopAppBar
+                    // Filtro de raio
                     Box {
                         IconButton(onClick = { showFilter = true }) {
                             Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.action_filter))
                         }
                         DropdownMenu(expanded = showFilter, onDismissRequest = { showFilter = false }) {
                             Text(
-                                stringResource(R.string.filter_radius_title),
+                                text = stringResource(R.string.filter_radius_title),
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                                 style = MaterialTheme.typography.labelLarge
                             )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.radius_250m)) },
-                                onClick = { vm.setRadiusMeters(250); showFilter = false }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.radius_1km)) },
-                                onClick = { vm.setRadiusMeters(1000); showFilter = false }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.radius_3km)) },
-                                onClick = { vm.setRadiusMeters(3000); showFilter = false }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.radius_5km)) },
-                                onClick = { vm.setRadiusMeters(5000); showFilter = false }
-                            )
+                            DropdownMenuItem(text = { Text(stringResource(R.string.radius_250m)) },
+                                onClick = { vm.setRadiusMeters(250); showFilter = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.radius_1km)) },
+                                onClick = { vm.setRadiusMeters(1000); showFilter = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.radius_3km)) },
+                                onClick = { vm.setRadiusMeters(3000); showFilter = false })
+                            DropdownMenuItem(text = { Text(stringResource(R.string.radius_5km)) },
+                                onClick = { vm.setRadiusMeters(5000); showFilter = false })
                         }
                     }
 
+                    // Perfil
                     IconButton(onClick = onOpenProfile) {
                         Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.search_profile_cd))
                     }
@@ -144,25 +104,78 @@ fun SearchScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { if (perm.isGranted) vm.refreshNearMe() else perm.ask() }) {
-                Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location))
-            }
+            FloatingActionButton(
+                onClick = { if (perm.isGranted) vm.refreshNearMe() else perm.ask() }
+            ) { Icon(Icons.Filled.MyLocation, contentDescription = stringResource(R.string.action_my_location)) }
         }
     ) { padding ->
+
         Column(Modifier.padding(padding)) {
 
+            // Campo de pesquisa abaixo do header (apenas quando ativo)
+            if (searchActive) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    TextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        placeholder = { Text(stringResource(R.string.search_location_hint)) },
+                      //  leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        trailingIcon = {
+                            Row {
+                                if (query.isNotBlank()) {
+                                    IconButton(onClick = { query = "" }, enabled = !geocodingInFlight) {
+                                        Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.action_clear))
+                                    }
+                                }
+                                // Pesquisa só aqui:
+                                IconButton(
+                                    onClick = {
+                                        if (query.isBlank() || geocodingInFlight) return@IconButton
+                                        scope.launch {
+                                            geocodingInFlight = true
+                                            val latLng = geocodeFirstLatLng(ctx, query)
+                                            geocodingInFlight = false
+                                            latLng?.let { vm.refreshAt(it, radiusMeters = state.radiusMeters) }
+                                        }
+                                    },
+                                    enabled = query.isNotBlank() && !geocodingInFlight
+                                ) {
+                                    // usar string existente (hint) para evitar 'action_search' inexistente
+                                    Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        )
+                    )
+                    if (geocodingInFlight) {
+                        LinearProgressIndicator(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
+
+            OfflineBanner()
 
             // ====== MAPA + interação de arrasto ======
             val cameraPositionState = rememberCameraPositionState {
-                // Continua no último centro pedido ao VM (fica sticky ao voltar do Details)
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
-            // anima apenas quando o VM muda explicitamente o centro (Pesquisar aqui / geocode / FAB)
             LaunchedEffect(state.cameraLatLng) {
                 cameraPositionState.animate(CameraUpdateFactory.newLatLngZoom(state.cameraLatLng, 15f))
             }
 
-            // detetar quando o utilizador pára de mexer no mapa
             var pendingCenter by remember { mutableStateOf<LatLng?>(null) }
             LaunchedEffect(cameraPositionState) {
                 snapshotFlow { cameraPositionState.isMoving }
@@ -171,12 +184,8 @@ fun SearchScreen(
                     }
             }
 
-            val mapProps = remember(perm.isGranted) {
-                MapProperties(isMyLocationEnabled = perm.isGranted)
-            }
-            val uiSettings = remember {
-                MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false)
-            }
+            val mapProps = remember(perm.isGranted) { MapProperties(isMyLocationEnabled = perm.isGranted) }
+            val uiSettings = remember { MapUiSettings(myLocationButtonEnabled = true, zoomControlsEnabled = false) }
 
             Box(
                 modifier = Modifier
@@ -209,7 +218,7 @@ fun SearchScreen(
                         )
                 )
 
-                // “Pesquisar aqui” apenas quando o utilizador moveu o mapa
+                // “Pesquisar aqui” quando o utilizador moveu o mapa
                 if (pendingCenter != null) {
                     ElevatedAssistChip(
                         onClick = {
@@ -227,7 +236,7 @@ fun SearchScreen(
 
             // ====== LISTA ======
             LazyColumn(Modifier.fillMaxSize()) {
-                // ---- CABEÇALHO DA LISTA: botão de Filtro (ordenar) à direita ----
+                // Cabeçalho: botão de ordenação
                 item {
                     Row(
                         modifier = Modifier
@@ -235,10 +244,7 @@ fun SearchScreen(
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         horizontalArrangement = Arrangement.End
                     ) {
-                        PlaceSortButton(
-                            state = sortState,
-                            onChange = { sortState = it }
-                        )
+                        PlaceSortButton(state = sortState, onChange = { sortState = it })
                     }
                 }
 
@@ -262,14 +268,15 @@ fun SearchScreen(
     }
 }
 
-/** Geocoding simples em background (SEM Compose aqui). */
+/** Geocoding simples em background. */
 private suspend fun geocodeFirstLatLng(
     context: Context,
     query: String
 ): LatLng? = withContext(Dispatchers.IO) {
     @Suppress("DEPRECATION")
     runCatching {
-        val list = Geocoder(context).getFromLocationName(query, 1)
-        list?.firstOrNull()?.let { LatLng(it.latitude, it.longitude) }
+        Geocoder(context).getFromLocationName(query, 1)
+            ?.firstOrNull()
+            ?.let { LatLng(it.latitude, it.longitude) }
     }.getOrNull()
 }

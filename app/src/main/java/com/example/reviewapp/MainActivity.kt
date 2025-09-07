@@ -33,12 +33,7 @@ class MainActivity : BaseActivity() {
 
         // 2) VOLTAR ao tema normal da app antes de desenhar Compose
         setTheme(R.style.Theme_ReviewApp)
-
-        // 3) (Opcional) Manter splash enquanto carregas algo (ex.: auth gate)
-        // splash.setKeepOnScreenCondition { /* isLoadingAuth || isSeedingGeofences */ false }
-
         setContent { ReviewAppTheme { AppNavGraph(rememberNavController()) } }
-
         quickSeedGeofences()
         startLocationUpdatesForGeofences()
     }

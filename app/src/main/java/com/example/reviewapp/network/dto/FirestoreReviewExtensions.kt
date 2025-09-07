@@ -71,7 +71,7 @@ suspend fun FirebaseFirestore.fetchPaged(
     val acc = mutableListOf<Review>()
 
     while (fetched < maxToFetch) {
-        val q = if (last == null) base else base.startAfter(last!!)
+        val q = if (last == null) base else base.startAfter(last)
         val snap = runCatching { q.get().await() }
             .onFailure { e -> Log.e(TAG, "GET page falhou", e) }
             .getOrNull() ?: break

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ReviewApp</string>
+    <string name="app_name">BITE</string>
 
         <!-- ====== Detalhes do Estabelecimento ====== -->
         <string name="details_title">Detalhes do estabelecimento</string>
@@ -97,7 +97,7 @@
     <!-- Títulos -->
     <string name="auth_title_register">Criar conta</string>
     <string name="auth_title_login">Entrar</string>
-    <string name="profile_title">Perfil do Utilizador</string>
+    <string name="profile_title"> </string>
 
     <!-- Campos -->
     <string name="field_username_unique">Username (único)</string>
@@ -135,7 +135,6 @@
     <string name="error_generic">Ocorreu um erro. Tenta novamente.</string>
 
     <!-- Home -->
-    <string name="home_title">Pastelarias &amp; Doçaria</string>
     <string name="home_empty">Ainda não há resultados por aqui.</string>
     <string name="home_loading">A carregar…</string>
     <string name="home_error">Falha ao carregar. Tenta novamente.</string>
@@ -148,7 +147,7 @@
 
 
     <!-- Search (Explorar) -->
-    <string name="search_title">Explorar</string>
+    <string name="search_title"> </string>
     <string name="search_profile_cd">Perfil</string>
     <string name="search_in_this_area">Pesquisar nesta zona</string>
     <!-- Raio de pesquisa -->
@@ -163,8 +162,13 @@
     <string name="search_location_hint">Pesquisar local (morada, cidade…)</string>
     <string name="search_here">Pesquisar aqui</string>
     <string name="drag_to_move_map">Arrasta o mapa para mudar a zona</string>
+    <string name="action_search">Pesquisar</string>
+
+
+
+
     <!-- Leaderboard -->
-    <string name="leaderboard_title">Leaderboard</string>
+    <string name="leaderboard_title"> </string>
     <string name="leaderboard_tab_establishments">Estabelecimentos</string>
     <string name="leaderboard_tab_pastries">Doçaria</string>
     <string name="leaderboard_empty_establishments">Ainda não há estabelecimentos com avaliações internas.</string>
@@ -191,7 +195,7 @@
     <string name="review_photo">Foto da avaliação</string>
     <string name="review_no_photo">Sem foto</string>
     <!-- Histórico -->
-    <string name="history_title">Histórico</string>
+    <string name="history_title"> </string>
     <string name="history_error_prefix">Erro: %1$s</string>
 
     <!-- Content descriptions / A11y -->
@@ -231,7 +235,8 @@
 
     <!-- Utilizador -->
     <string name="user_generic">Utilizador</string>
-
+    <!-- Profile -->
+    <string name="profile_overview_title">Os teus dados</string>
     <!-- Erros genéricos -->
     <string name="error_fill_fields">Preenche os campos e escolhe as estrelas.</string>
     <string name="error_submit_generic">Não foi possível enviar a avaliação. Tenta novamente.</string>
@@ -272,6 +277,16 @@
 
     <string name="offline_banner_message">Estás offline — a mostrar dados em cache</string>
     <string name="profile_offline_no_cache">Estás offline e não há dados em cache para o perfil.</string>
+    <string name="profile_error_generic">Erro.</string>
+    <string name="home_title"> </string>
 
+    <string name="app_language_button">Idioma</string>
+    <string name="app_language_header">Idioma da aplicação</string>
+    <string name="app_language_system">Usar idioma do sistema</string>
+
+    <string name="lang_pt">Português</string>
+    <string name="lang_en">Inglês</string>
+    <string name="lang_es">Espanhol</string>
+    <string name="lang_fr">Francês</string>
 
 </resources>

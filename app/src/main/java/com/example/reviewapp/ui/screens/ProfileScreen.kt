@@ -1,17 +1,21 @@
-// ProfileScreen.kt
 package com.example.reviewapp.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.AuthViewModel
+import com.example.reviewapp.ui.components.AppHeader
+import com.example.reviewapp.ui.components.AppLanguageIconButton
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.rememberIsOnline
 import com.google.firebase.firestore.Source
@@ -25,19 +29,19 @@ fun ProfileScreen(
     val user = authViewModel.auth.currentUser
     val uid = user?.uid
     val db = authViewModel.db
-    val context = LocalContext.current
 
     val isOnline by rememberIsOnline()
+    val context = LocalContext.current
 
     var username by remember { mutableStateOf<String?>(null) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
-    var hasCache by remember { mutableStateOf<Boolean?>(null) } // null = desconhecido
+    var hasCache by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(uid, isOnline) {
         if (uid == null) {
             loading = false
-            error = context.getString(R.string.error_not_authenticated)
+            error = context.getString(R.string.error_not_authenticated)   // ← USAR context.getString
             return@LaunchedEffect
         }
 
@@ -46,74 +50,122 @@ fun ProfileScreen(
         hasCache = null
 
         val docRef = db.collection("users").document(uid)
-
         try {
-            val snap = if (isOnline) {
-                // Online: lê do servidor
-                docRef.get(Source.SERVER).await()
-            } else {
-                // Offline: tenta cache (não lançar erro vermelho)
-                docRef.get(Source.CACHE).await()
-            }
+            val snap = if (isOnline) docRef.get(Source.SERVER).await()
+            else           docRef.get(Source.CACHE).await()
 
             hasCache = snap.metadata.isFromCache || !isOnline
-            if (snap.exists()) {
-                username = snap.getString("username") ?: ""
-            } else {
-                // Sem documento (ex.: sem cache offline)
-                username = null
-            }
+            username = if (snap.exists()) snap.getString("username") ?: "" else null
         } catch (e: Exception) {
-            // Só mostrar erro se estamos online; offline sem cache não é "erro" para o utilizador
-            if (isOnline) error = e.localizedMessage
+            if (isOnline) error = e.localizedMessage ?: context.getString(R.string.profile_error_generic)
         } finally {
             loading = false
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // (Opcional) Banner de offline
-        OfflineBanner()
+    Scaffold(
+        topBar = {
+            AppHeader(
+                title = stringResource(R.string.profile_title),
+                actions = {
+                    // Idioma (ícone + dropdown)
+                    AppLanguageIconButton()
 
-        Text(stringResource(R.string.profile_title), style = MaterialTheme.typography.headlineSmall)
-        Spacer(Modifier.height(16.dp))
-
-        when {
-            loading -> CircularProgressIndicator()
-
-            else -> {
-                // Erros reais (apenas online)
-                error?.let {
-                    Text(
-                        "${stringResource(R.string.label_error)} $it",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                    Spacer(Modifier.height(8.dp))
+                    // Logout (ícone)
+                    IconButton(
+                        onClick = {
+                            authViewModel.signOut()
+                            onLogout()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Logout,
+                            contentDescription = stringResource(R.string.action_logout)
+                        )
+                    }
                 }
-
-                // Mensagem neutra quando offline e não há cache
-                if (!isOnline && (hasCache == false || username == null)) {
-                    Text(
-                        text = stringResource(R.string.profile_offline_no_cache),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-
-                Text("${stringResource(R.string.label_username)} ${username ?: stringResource(R.string.placeholder_na)}")
-                Text("${stringResource(R.string.label_email)} ${user?.email ?: stringResource(R.string.placeholder_na)}")
-            }
+            )
         }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            OfflineBanner()
+            Spacer(Modifier.height(12.dp))
 
-        Spacer(Modifier.height(16.dp))
-        Button(onClick = {
-            authViewModel.signOut()
-            onLogout()
-        }) { Text(stringResource(R.string.action_logout)) }
+            ElevatedCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        text = stringResource(R.string.profile_overview_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    when {
+                        loading -> {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                        else -> {
+                            error?.let {
+                                Text(
+                                    text = "${stringResource(R.string.label_error)} $it",
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                            } ?: run {
+                                if (!isOnline && (hasCache == false || username == null)) {
+                                    Text(
+                                        text = stringResource(R.string.profile_offline_no_cache),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                            }
+
+                            ProfileRow(
+                                label = stringResource(R.string.label_username),
+                                value = username ?: stringResource(R.string.placeholder_na)
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            ProfileRow(
+                                label = stringResource(R.string.label_email),
+                                value = user?.email ?: stringResource(R.string.placeholder_na)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun ProfileRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }

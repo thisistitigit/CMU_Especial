@@ -21,7 +21,6 @@ import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.util.concurrent.TimeUnit
 
-// ReviewPhotoSyncWorker.kt
 @HiltWorker
 class ReviewPhotoSyncWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -47,22 +46,21 @@ class ReviewPhotoSyncWorker @AssistedInject constructor(
         for (r in reviews) {
             val localPath = r.photoLocalPath ?: continue
             try {
-                // 1) Upload para Storage (nome determinístico evita duplicados)
+                // 1) Upload para Storage
                 val ref = storage.reference.child("reviews/${r.id}.jpg")
                 val fileUri = Uri.fromFile(File(localPath))
                 ref.putFile(fileUri).await()
                 val url = ref.downloadUrl.await().toString()
 
-                // 2) Atualizar Firestore (patch do campo photoCloudUrl)
+                // 2) Atualizar Firestore
                 firestore.collection("reviews").document(r.id)
                     .update(mapOf("photoCloudUrl" to url))
                     .await()
 
-                // 3) Refletir em Room (para UI)
+                // 3) Refletir em Room
                 reviewDao.updateCloudUrl(r.id, url)
             } catch (e: Exception) {
                 hadFailures = true
-                // deixa o restante seguir; falhas pontuais serão re-tentadas
             }
         }
 

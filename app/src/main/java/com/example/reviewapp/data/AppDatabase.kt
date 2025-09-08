@@ -14,10 +14,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun placeDao(): PlaceDao
     abstract fun reviewDao(): ReviewDao
     }
-    // Migrations.kt
     val MIGRATION_1_2 = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
-            // As colunas novas são NULLABLE → pode ser só ADD COLUMN
             db.execSQL("ALTER TABLE reviews ADD COLUMN placeName TEXT")
             db.execSQL("ALTER TABLE reviews ADD COLUMN placeAddress TEXT")
         }

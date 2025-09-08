@@ -67,7 +67,6 @@ fun LeaderboardScreen(
         ) {
             OfflineBanner()
 
-            // ---- Segmented control (tabs) arredondado ----
             val tabs = listOf(
                 R.string.leaderboard_tab_establishments to LeaderboardViewModel.Tab.ESTABLISHMENTS,
                 R.string.leaderboard_tab_pastries       to LeaderboardViewModel.Tab.PASTRIES
@@ -96,7 +95,6 @@ fun LeaderboardScreen(
                 }
             }
 
-            // ---- Conteúdo ----
             when {
                 state.isLoading -> Box(
                     Modifier
@@ -127,7 +125,6 @@ fun LeaderboardScreen(
     }
 }
 
-/* ===================== LISTAS ===================== */
 
 @Composable
 private fun EstablishmentsList(
@@ -189,7 +186,6 @@ private fun PastriesList(items: List<LeaderboardViewModel.PastryRow>) {
     }
 }
 
-/* ===================== CARD MODERNO ===================== */
 
 @Composable
 private fun LeaderboardCardModern(
@@ -215,7 +211,6 @@ private fun LeaderboardCardModern(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Rank badge redondo
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -233,7 +228,6 @@ private fun LeaderboardCardModern(
 
             Spacer(Modifier.width(12.dp))
 
-            // Título + endereço + rating
             Column(Modifier.weight(1f)) {
                 Text(
                     text = title,
@@ -265,7 +259,6 @@ private fun LeaderboardCardModern(
     }
 }
 
-/* ===================== EMPTY ===================== */
 
 @Composable
 private fun EmptyState(text: String) {

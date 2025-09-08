@@ -40,12 +40,11 @@ fun ReviewFiltersMinimal(
 
     Row(modifier = modifier) {
 
-        // ---------- Ordenar ----------
         Box {
             IconButton(onClick = { sortOpen = true }) {
                 Icon(
                     imageVector = Icons.Filled.Sort,
-                    contentDescription = null, // sem texto/desc para manter minimal
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -81,7 +80,6 @@ fun ReviewFiltersMinimal(
 
         Spacer(Modifier.width(4.dp))
 
-        // ---------- Filtros ----------
         Box {
             IconButton(onClick = { filterOpen = true }) {
                 Icon(
@@ -92,7 +90,6 @@ fun ReviewFiltersMinimal(
             }
             DropdownMenu(expanded = filterOpen, onDismissRequest = { filterOpen = false }) {
 
-                // Só com foto
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_with_photo)) },
                     leadingIcon = {
@@ -103,11 +100,9 @@ fun ReviewFiltersMinimal(
                     },
                     onClick = {
                         onChange(state.copy(withPhotoOnly = !state.withPhotoOnly))
-                        // mantém o menu aberto para permitir múltiplos toggles
                     }
                 )
 
-                // Só minhas
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_only_mine)) },
                     leadingIcon = {
@@ -123,14 +118,12 @@ fun ReviewFiltersMinimal(
 
                 androidx.compose.material3.Divider()
 
-                // Cabeçalho (desabilitado)
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_min_stars)) },
                     enabled = false,
                     onClick = {}
                 )
 
-                // Qualquer nº de estrelas
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_any_stars)) },
                     leadingIcon = {
@@ -141,11 +134,9 @@ fun ReviewFiltersMinimal(
                     },
                     onClick = {
                         onChange(state.copy(minStars = null))
-                        // mantém aberto (consistente com o FilterBar original)
                     }
                 )
 
-                // 5..1 estrelas
                 for (s in 5 downTo 1) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.reviews_filter_min_stars_value, s)) },

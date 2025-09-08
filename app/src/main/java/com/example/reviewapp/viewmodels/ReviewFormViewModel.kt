@@ -103,7 +103,6 @@ class ReviewFormViewModel @Inject constructor(
         return try {
             reviewRepo.addReview(review, userLat = lat, userLng = lng, now = now)
 
-            // emite o evento de sucesso (antes ou depois de limpar o formulário)
             _events.tryEmit(Event.Submitted)
 
             _state.update {

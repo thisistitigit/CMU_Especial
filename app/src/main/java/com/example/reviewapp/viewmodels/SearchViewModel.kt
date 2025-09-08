@@ -38,19 +38,16 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
 
     data class UiState(
-        // mapa / pesquisa
-        val cameraLatLng: LatLng = LatLng(38.7223, -9.1393), // Lisboa por defeito
+        val cameraLatLng: LatLng = LatLng(38.7223, -9.1393),
         val searchCenter: LatLng = LatLng(38.7223, -9.1393),
-        val places: List<Place> = emptyList(),          // resultados de PESQUISA (centro = searchCenter)
+        val places: List<Place> = emptyList(),
 
-        // “perto de si” (GPS)
-        val nearMeCenter: LatLng? = null,               // centro real do utilizador (GPS)
-        val nearMePlaces: List<Place> = emptyList(),    // resultados fixos ao GPS
+        val nearMeCenter: LatLng? = null,
+        val nearMePlaces: List<Place> = emptyList(),
 
-        // controlos comuns
-        val radiusMeters: Int = 3000,                   // raio desejado no UI
-        val fetchedRadiusMeters: Int = 0,               // último raio usado para PESQUISA
-        val nearMeFetchedRadiusMeters: Int = 0,         // último raio usado para NEAR ME
+        val radiusMeters: Int = 3000,
+        val fetchedRadiusMeters: Int = 0,
+        val nearMeFetchedRadiusMeters: Int = 0,
         val isLoading: Boolean = false,
         val error: String? = null
     )
@@ -58,7 +55,6 @@ class SearchViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState(isLoading = true))
     val state: StateFlow<UiState> = _state
 
-    // caches brutas independentes
     private var rawSearchPlaces: List<Place> = emptyList()
     private var rawNearMePlaces: List<Place> = emptyList()
 
@@ -104,7 +100,6 @@ class SearchViewModel @Inject constructor(
             )
         }
 
-        // enrich em background (telefone/ratings/coords)
         viewModelScope.launch {
             val enriched = runCatching { placeRepo.enrichPlaces(rawSearchPlaces) }.getOrNull() ?: return@launch
             if (enriched !== rawSearchPlaces) {
@@ -144,7 +139,6 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    // ---------- BOOTSTRAP ----------
 
     private suspend fun preload() {
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -152,7 +146,6 @@ class SearchViewModel @Inject constructor(
 
         val defaultCenter = _state.value.cameraLatLng
 
-        // 1) tentar GPS para NEAR ME
         if (fineGranted || coarseGranted) {
             try {
                 val token = CancellationTokenSource().token
@@ -160,9 +153,7 @@ class SearchViewModel @Inject constructor(
                 val best = loc ?: try { locationProvider.lastLocation.await() } catch (_: Throwable) { null }
                 if (best != null) {
                     val me = LatLng(best.latitude, best.longitude)
-                    // fetch near-me em paralelo com a pesquisa default
                     doFetchNearMe(me, _state.value.radiusMeters)
-                    // também coloca pesquisa por defeito a partir do mesmo sítio (opcional)
                     doFetchSearch(me, _state.value.radiusMeters)
                     return
                 }
@@ -170,18 +161,15 @@ class SearchViewModel @Inject constructor(
             }
         }
 
-        // 2) fallback: Lisboa
         doFetchNearMe(defaultCenter, _state.value.radiusMeters)
         doFetchSearch(defaultCenter, _state.value.radiusMeters)
     }
 
-    // ---------- API PÚBLICA ----------
 
     fun setRadiusMeters(newRadius: Int) = viewModelScope.launch {
         val st = _state.value
         _state.update { it.copy(radiusMeters = newRadius) }
 
-        // SEARCH
         if (newRadius > st.fetchedRadiusMeters) {
             doFetchSearch(st.searchCenter, newRadius)
         } else {
@@ -190,7 +178,6 @@ class SearchViewModel @Inject constructor(
             }
         }
 
-        // NEAR ME
         val meCenter = _state.value.nearMeCenter
         if (meCenter != null) {
             if (newRadius > st.nearMeFetchedRadiusMeters) {

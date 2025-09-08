@@ -111,10 +111,8 @@ fun LocationPermissionGate(
                 } else if (!bgGranted) {
                     TextButton(onClick = {
                         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-                            // Android 10 ainda mostra diálogo do sistema para background
                             reqBackgroundQ.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                         } else {
-                            // Android 11+ tem de ser nas Definições (“Permitir sempre”)
                             openAppSettings(context)
                         }
                     }) {

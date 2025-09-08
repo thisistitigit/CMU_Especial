@@ -71,8 +71,8 @@ class MainActivity : BaseActivity() {
 
         val fused = LocationServices.getFusedLocationProviderClient(this)
         val req = LocationRequest.Builder(
-            Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30 * 60 * 1000L // 30 min sugerido
-        ).setMinUpdateDistanceMeters(500f) // refresca após ~500 m
+            Priority.PRIORITY_BALANCED_POWER_ACCURACY, 30 * 60 * 1000L
+        ).setMinUpdateDistanceMeters(500f)
             .build()
 
         val intent = Intent(this, LocationUpdateReceiver::class.java)
@@ -82,6 +82,6 @@ class MainActivity : BaseActivity() {
 
         try {
             fused.requestLocationUpdates(req, pi)
-        } catch (_: SecurityException) { /* pedir permissão antes */ }
+        } catch (_: SecurityException) {  }
     }
 }

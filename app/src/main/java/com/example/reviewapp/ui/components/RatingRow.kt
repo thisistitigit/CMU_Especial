@@ -22,7 +22,6 @@ fun RatingRow(
     rating: Double,
     count: Int? = null,
     modifier: Modifier = Modifier,
-    // opções de estilo (se precisares de ajustar noutros ecrãs)
     showSlash5: Boolean = true,
     iconTint: Color = MaterialTheme.colorScheme.primary,
     iconSize: Dp = 18.dp,
@@ -35,7 +34,7 @@ fun RatingRow(
             imageVector = Icons.Filled.Star,
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.width(iconSize) // largura = altura (altura implícita via fonte)
+            modifier = Modifier.width(iconSize)
         )
         Spacer(Modifier.width(6.dp))
         val rounded = round(rating * 10) / 10.0

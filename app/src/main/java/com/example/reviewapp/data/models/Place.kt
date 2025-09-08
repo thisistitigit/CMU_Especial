@@ -1,7 +1,7 @@
 package com.example.reviewapp.data.models
 
 data class Place(
-    val id: String,              // estável (API ou hash lat/lng+nome)
+    val id: String,
     val name: String,
     val category: String?,
     val phone: String?,

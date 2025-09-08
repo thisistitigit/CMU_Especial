@@ -1,13 +1,15 @@
-// app/src/main/java/com/example/reviewapp/utils/NotificationUtils.kt
 package com.example.reviewapp.utils
 
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.res.Configuration
 import android.os.Build
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.reviewapp.R
 
 object NotificationUtils {
@@ -19,19 +21,46 @@ object NotificationUtils {
             if (mgr.getNotificationChannel(NEARBY_CHANNEL_ID) == null) {
                 val ch = NotificationChannel(
                     NEARBY_CHANNEL_ID,
-                    "Estabelecimentos por perto",
+                    context.getString(R.string.channel_nearby_name),
                     NotificationManager.IMPORTANCE_DEFAULT
-                ).apply { description = "Alertas quando estás perto de uma pastelaria com reviews" }
+                ).apply {
+                    description = context.getString(R.string.channel_nearby_desc)
+                }
                 mgr.createNotificationChannel(ch)
             }
         }
     }
 
-    fun createNotification(context: Context, title: String, text: String): Notification {
+    fun createNotification(context: Context, placeName: String?): Notification {
+        val isDark = (context.resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
+        val layoutId = if (isDark) R.layout.notification_tile_small_dark
+        else       R.layout.notification_tile_small_light
+
+        val titleText = context.getString(R.string.notif_nearby_title_prefix) + " " +
+                (placeName ?: context.getString(R.string.channel_nearby_name))
+        val bodyText  = context.getString(R.string.notif_nearby_distance)
+
+        val titleColor = ContextCompat.getColor(
+            context, if (isDark) R.color.neutral_on_dark else R.color.neutral_on_light
+        )
+        val textColor  = titleColor
+
+        val content = RemoteViews(context.packageName, layoutId).apply {
+            setImageViewResource(R.id.icon, R.drawable.logo)
+            setTextViewText(R.id.title, titleText)
+            setTextViewText(R.id.text, bodyText)
+            setTextColor(R.id.title, titleColor)
+            setTextColor(R.id.text,  textColor)
+        }
+
         return NotificationCompat.Builder(context, NEARBY_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(text)
+            .setSmallIcon(R.drawable.logo)
+            .setCustomContentView(content)
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setColorized(true)
+            .setColor(ContextCompat.getColor(context, R.color.brand_lilac))
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
@@ -39,11 +68,11 @@ object NotificationUtils {
 
     fun showNotification(context: Context, notification: Notification): Boolean {
         return try {
-            with(NotificationManagerCompat.from(context)) {
-                notify(System.currentTimeMillis().toInt(), notification)
-            }
+            NotificationManagerCompat.from(context).notify(
+                System.currentTimeMillis().toInt(), notification
+            )
             true
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             false
         }
     }

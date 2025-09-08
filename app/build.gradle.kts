@@ -56,7 +56,6 @@ android {
 }
 
 dependencies {
-    // Compose BoM (uma vez chega)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.hilt.common)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -76,7 +75,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
 
-    // Navigation runtime (se usado)
     implementation(libs.androidx.navigation.runtime.ktx)
 
     // Room
@@ -84,23 +82,19 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // Firebase — só via BOM (evita “duplicate class”)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.storage.ktx)
 
-    // Google / Maps / Places / Auth
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.places)
     implementation(libs.play.services.auth)
 
-    // Media3 (artefacto correto)
     implementation(libs.androidx.media3.common)
 
-    // Networking (apenas Moshi converter – remove o converter-gson antigo)
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.moshi)
     implementation(libs.okhttp.logging)
@@ -108,12 +102,10 @@ dependencies {
     implementation(libs.moshi.kotlin)
     kapt(libs.moshi.kotlin.codegen)
 
-    // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // WorkManager / Coil / CameraX / Material / Maps Compose
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.coil.compose)
     implementation(libs.camerax.core)
@@ -125,7 +117,8 @@ dependencies {
     implementation(libs.retrofit.gson)
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("androidx.core:core-splashscreen:1.0.0")
-    // Testes
+
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -1,8 +1,6 @@
-// network/mappers/GooglePlacesMappers.kt
 package com.example.reviewapp.network.mappers
 
 import com.example.reviewapp.data.models.Place
-import com.example.reviewapp.network.dto.GooglePlaceDetailsResponse
 import com.example.reviewapp.network.dto.GooglePlacesResponse
 
 fun GooglePlacesResponse.toPlaces(): List<Place> =

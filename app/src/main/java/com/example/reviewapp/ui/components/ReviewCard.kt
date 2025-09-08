@@ -48,7 +48,6 @@ fun ReviewCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Header: avatar com iniciais + nome + data à direita
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val initials = remember(review.userName) { initialsFromName(review.userName) }
                 Box(
@@ -93,7 +92,6 @@ fun ReviewCard(
                 )
             }
 
-            // Foto (se existir) — cantos 16dp
             val photoModel = review.photoLocalPath?.takeIf { it.isNotBlank() } ?: review.photoCloudUrl
             if (!photoModel.isNullOrBlank()) {
                 AsyncImage(
@@ -107,7 +105,7 @@ fun ReviewCard(
                 )
             }
 
-            // Rating (estrela + “X/5”), sem chip/fundo
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Filled.Star,
@@ -121,7 +119,6 @@ fun ReviewCard(
                 )
             }
 
-            // Comentário
             if (review.comment.isNotBlank()) {
                 Text(
                     text = review.comment,

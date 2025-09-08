@@ -25,7 +25,7 @@ class HistoryViewModel @Inject constructor(
     data class Row(
         val reviewId: String,
         val placeId: String,
-        val placeName: String,     // preferimos o da review; se faltar, usamos o do Place
+        val placeName: String,
         val pastryName: String,
         val stars: Int,
         val createdAt: Long,
@@ -51,11 +51,8 @@ class HistoryViewModel @Inject constructor(
             .onStart { _ui.update { it.copy(isLoading = true, error = null) } }
             .catch { e -> _ui.update { it.copy(isLoading = false, error = e.message) } }
             .collect { reviews ->
-                // 1) enriquecer/catchear os places por id (não bloqueia a UI se falhar)
                 val ids = reviews.map { it.placeId.trim() }.distinct()
                 val map = runCatching { placeRepo.enrichIds(ids) }.getOrDefault(emptyMap())
-
-                // 2) construir as linhas (nome da review; se faltar, usa o do place)
                 val rows = reviews
                     .sortedByDescending { it.createdAt }
                     .map { r ->

@@ -1,4 +1,3 @@
-// network/dto/GooglePlacesResponse.kt
 package com.example.reviewapp.network.dto
 
 import com.google.gson.annotations.SerializedName

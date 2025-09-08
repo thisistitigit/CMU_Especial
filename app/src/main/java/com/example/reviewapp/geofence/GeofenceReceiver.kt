@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/reviewapp/geofence/GeofenceReceiver.kt
 package com.example.reviewapp.geofence
 
 import android.content.BroadcastReceiver
@@ -28,9 +27,7 @@ class GeofenceReceiver : BroadcastReceiver() {
             transition == com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_ENTER ||
                     transition == com.google.android.gms.location.Geofence.GEOFENCE_TRANSITION_DWELL
         if (!isEnterOrDwell) return
-      //  if (!TimeUtils.isWithinPromoWindow()) return
 
-        // ⚡ obter dependências via EntryPoint (sem @AndroidEntryPoint)
         val appCtx = context.applicationContext
         val entryPoint = EntryPointAccessors.fromApplication(
             appCtx, GeofenceReceiverEntryPoint::class.java
@@ -41,9 +38,7 @@ class GeofenceReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO).launch {
             ids.forEach { placeId ->
                 val place = placeDao.get(placeId)
-                val title = place?.name ?: "Estabelecimento por perto"
-                val addr  = place?.address ?: "A menos de 50 m"
-                notifyNearby(appCtx, "Estás perto: $title", addr)
+                notifyNearby(appCtx, place?.name)
             }
         }
     }

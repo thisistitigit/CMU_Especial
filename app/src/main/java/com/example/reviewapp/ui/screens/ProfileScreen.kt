@@ -15,7 +15,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.AuthViewModel
 import com.example.reviewapp.ui.components.AppHeader
-import com.example.reviewapp.ui.components.AppLanguageIconButton
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.ui.components.rememberIsOnline
 import com.example.reviewapp.ui.theme.AppTheme
@@ -42,7 +41,7 @@ fun ProfileScreen(
     LaunchedEffect(uid, isOnline) {
         if (uid == null) {
             loading = false
-            error = context.getString(R.string.error_not_authenticated)   // ← USAR context.getString
+            error = context.getString(R.string.error_not_authenticated)
             return@LaunchedEffect
         }
 
@@ -69,10 +68,6 @@ fun ProfileScreen(
             AppHeader(
                 title = stringResource(R.string.profile_title),
                 actions = {
-                    // Idioma (ícone + dropdown)
-                    AppLanguageIconButton()
-
-                    // Logout (ícone)
                     IconButton(onClick = onLogout) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.Logout,

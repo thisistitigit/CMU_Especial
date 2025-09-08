@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ====== Place details ====== -->
+    <string name="details_title">Place details</string>
+    <string name="details_back">Back</string>
+    <string name="details_review_cta">Rate place</string>
+
+    <!-- Header / main info -->
+    <string name="place_name">Place name</string>
+    <string name="place_category">Rated pastry</string>
+    <string name="place_score">Score</string>
+    <string name="place_phone">Phone</string>
+    <string name="place_phone_none">No phone</string>
+    <string name="place_call_action">Call</string>
+    <string name="place_call_action_with_number">Call: %1$s</string>
+    <string name="place_address">Address</string>
+    <string name="place_coords">Coordinates</string>
+    <string name="place_location">Location</string>
+    <string name="place_view_on_map">View on map</string>
+    <string name="place_get_directions">Get directions</string>
+
+    <!-- Ratings (Google & in-app) -->
+    <string name="ratings_google_title">Google rating</string>
+    <string name="ratings_internal_title">In-app rating</string>
+    <string name="ratings_average">Average</string>
+    <string name="ratings_from_users">from users</string>
+    <plurals name="ratings_count">
+        <item quantity="one">%1$d review</item>
+        <item quantity="other">%1$d reviews</item>
+    </plurals>
+    <string name="ratings_not_available">No reviews yet</string>
+
+    <!-- Reviews section -->
+    <string name="reviews_all_title">All reviews</string>
+    <string name="reviews_view_all">View all</string>
+    <string name="reviews_section_title_top10">Top 10 reviews</string>
+    <string name="reviews_empty">There are no reviews for this place yet.</string>
+    <string name="review_user_name">User name</string>
+    <string name="review_pastry_name">Rated pastry</string>
+    <string name="review_comment">Comment</string>
+    <string name="review_rating">Rating</string>
+    <string name="review_date">Date</string>
+    <string name="review_add">Add review</string>
+    <string name="review_see_more">See more</string>
+    <string name="review_see_less">See less</string>
+
+    <!-- Photos -->
+    <string name="photo_device">Photo on device</string>
+    <string name="photo_cloud">Cloud photo</string>
+    <string name="photo_optional_hint">(optional)</string>
+
+    <!-- States / feedback -->
+    <string name="state_loading">Loading…</string>
+    <string name="state_error">An error occurred. Try again.</string>
+    <string name="state_retry">Try again</string>
+
+    <!-- A11y -->
+    <string name="cd_navigate_back">Navigate back</string>
+    <string name="cd_call_place">Call place</string>
+    <string name="cd_place_photo">Place photo</string>
+    <string name="cd_user_photo">User photo</string>
+    <string name="cd_rating_stars">Star rating: %1$.1f out of 5</string>
+
+    <!-- Bottom bar -->
+    <string name="bottom_home">Home</string>
+    <string name="bottom_search">Explore</string>
+    <string name="bottom_history">History</string>
+    <string name="bottom_profile">Profile</string>
+    <string name="cd_bottom_item">Open tab: %1$s</string>
+
+    <!-- Placeholders / misc -->
+    <string name="placeholder_leaderboard">Top places (Leaderboard)</string>
+    <string name="placeholder_history">My history</string>
+    <string name="authgate_preparing">Preparing…</string>
+    <string name="history_empty">Your history is empty</string>
+
+    <!-- Common titles/actions -->
+    <string name="action_details">Details</string>
+    <string name="action_review">Rate</string>
+    <string name="action_try_again">Try again</string>
+    <string name="action_open_settings">Open settings</string>
+    <string name="action_allow_location">Allow location</string>
+    <string name="action_my_location">My location</string>
+
+    <!-- Auth -->
+    <string name="auth_title_register">Create account</string>
+    <string name="auth_title_login">Sign in</string>
+
+    <!-- Fields -->
+    <string name="field_username_unique">Username (unique)</string>
+    <string name="field_email">Email</string>
+    <string name="field_password">Password</string>
+    <string name="field_confirm_password">Confirm password</string>
+
+    <!-- Buttons -->
+    <string name="action_create_account">Create account</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_have_account">I already have an account</string>
+
+    <!-- Status -->
+    <string name="status_registering">Registering…</string>
+    <string name="status_signing_in">Signing in…</string>
+
+    <!-- Labels -->
+    <string name="label_error">Error:</string>
+    <string name="placeholder_na">Not available</string>
+
+    <!-- Errors -->
+    <string name="error_passwords_mismatch">Passwords don’t match.</string>
+    <string name="error_username_invalid">Invalid username. Use 3–20 characters: a–z, 0–9 or _.</string>
+    <string name="error_username_taken">That username already exists.</string>
+    <string name="error_register_failed">Registration failed. Try again.</string>
+    <string name="error_profile_create_failed">Failed to create profile.</string>
+    <string name="error_not_authenticated_after_register">User not authenticated after registration.</string>
+    <string name="error_not_authenticated">Not authenticated.</string>
+    <string name="error_login_failed">Failed to sign in. Try again.</string>
+    <string name="error_generic">An error occurred. Try again.</string>
+
+    <!-- Home -->
+    <string name="home_empty">No results around here yet.</string>
+    <string name="home_loading">Loading…</string>
+    <string name="home_error">Failed to load. Try again.</string>
+    <string name="home_sort_distance">Distance</string>
+    <string name="home_explore_map">Explore on map</string>
+    <string name="home_suggestions_title">Suggestions near you</string>
+    <string name="home_nearby_title">Nearby</string>
+    <string name="home_search_results_title">Search results</string>
+    <string name="action_clear">Clear</string>
+
+    <!-- Search / Explore -->
+    <string name="search_profile_cd">Profile</string>
+    <string name="search_in_this_area">Search in this area</string>
+    <string name="radius_label">Radius</string>
+    <string name="action_filter">Filter</string>
+    <string name="filter_radius_title">Search radius</string>
+    <string name="search_location_hint">Search location</string>
+    <string name="search_here">Search here</string>
+    <string name="drag_to_move_map">Drag the map to change the area</string>
+    <string name="action_search">Search</string>
+
+    <!-- Leaderboard -->
+    <string name="leaderboard_tab_establishments">Establishments</string>
+    <string name="leaderboard_tab_pastries">Pastry</string>
+    <string name="leaderboard_empty_establishments">There are no establishments with in-app reviews yet.</string>
+    <string name="leaderboard_empty_pastries">There are no pastries reviewed yet.</string>
+    <string name="reviews_short">reviews</string>
+    <string name="pastry_label">Pastry</string>
+
+    <!-- Location permissions (banner) -->
+    <string name="perm_rationale">The app needs your location to center the map near you.</string>
+    <string name="perm_denied_permanent">Location permission disabled. Grant access to center the map on your position.</string>
+
+    <!-- Review form -->
+    <string name="review_new_title">New review</string>
+    <string name="field_pastry">Pastry</string>
+    <string name="field_comment">Comment</string>
+    <string name="action_take_photo">Take photo</string>
+    <string name="action_remove_photo">Remove photo</string>
+    <string name="action_pick_gallery">Choose from gallery</string>
+    <string name="action_submit">Submit</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="rules_not_met">You must be within ≤ 50 m and your last review must be older than 30 minutes.</string>
+
+    <!-- Review details -->
+    <string name="review_details_title">Review details</string>
+    <string name="review_open_external">Open image</string>
+    <string name="review_photo">Review photo</string>
+    <string name="review_no_photo">No photo</string>
+
+    <!-- History -->
+    <string name="history_error_prefix">Error: %1$s</string>
+
+    <!-- A11y (more) -->
+    <string name="cd_review_photo">Pastry photo</string>
+    <string name="cd_star_icon">Star</string>
+    <string name="cd_open_details">Open details</string>
+
+    <!-- Location modal -->
+    <string name="location_modal_title">Enable location access (foreground and background)</string>
+    <string name="location_modal_body_fg">
+        Step 1 — Allow the **foreground** location (“While app in use”).
+        This lets us compute distance and show nearby results.
+        Next, you’ll need to enable background access.
+    </string>
+    <string name="location_modal_body_bg">
+        Required for proximity notifications and geofencing: enable **background** location (“Allow all the time”).
+        Without this, the app can’t alert you when you approach a place with reviews, even if the app is closed.
+    </string>
+    <string name="location_modal_hint_path">
+        Path: App settings → Permissions → Location → Allow all the time
+    </string>
+    <string name="location_modal_action_allow_while_using">Allow location (foreground)</string>
+    <string name="location_modal_action_allow_always_open_settings">Open Settings to “Allow all the time”</string>
+    <string name="location_modal_open_settings">Open Settings</string>
+    <string name="location_modal_not_now">Not now</string>
+
+    <!-- User / Profile -->
+    <string name="user_generic">User</string>
+    <string name="profile_overview_title">Your data</string>
+
+    <!-- Generic errors -->
+    <string name="error_fill_fields">Fill the fields and choose the stars.</string>
+    <string name="error_submit_generic">Couldn’t send the review. Try again.</string>
+
+    <!-- Location / Rules -->
+    <string name="error_enable_location">Enable location to review on site.</string>
+    <string name="hint_grant_location_permission">Grant location permission to review on site.</string>
+    <string name="hint_enable_gps">Enable device location (GPS).</string>
+    <string name="hint_fetching_location">Getting location…</string>
+
+    <!-- Distance / Time -->
+    <string name="error_too_far">You are far from the place (limit ~%1$d m).</string>
+    <string name="error_too_far_live">You are far from the place (≈%1$d m; limit %2$d m).</string>
+    <string name="error_too_soon">It hasn’t been %1$d minutes since your last review.</string>
+    <string name="error_too_soon_live">Wait ~%1$d min for a new review.</string>
+
+    <!-- Sort & filters -->
+    <string name="reviews_sort_oldest_first">Oldest → newest</string>
+    <string name="reviews_sort_newest_first">Newest → oldest</string>
+    <string name="reviews_filter_with_photo">With photo</string>
+    <string name="reviews_filter_only_mine">Only mine</string>
+    <string name="reviews_filter_min_stars">Min. stars</string>
+    <string name="reviews_filter_any_stars">Any number of stars</string>
+    <string name="reviews_filter_min_stars_value">%1$d★ or more</string>
+    <string name="reviews_count_filtered">%1$d review(s)</string>
+    <string name="home_best_rated_title">Our users recommend</string>
+    <string name="leaderboard_rating_count_inline">%1$d reviews</string>
+
+    <!-- Search sorting -->
+    <string name="search_filter_button">Filter</string>
+    <string name="search_sort_header">Sort by</string>
+    <string name="search_sort_default">Default</string>
+    <string name="search_sort_google_rating">Google rating</string>
+    <string name="search_sort_distance_asc">Distance (nearest first)</string>
+    <string name="search_sort_rating_count">Most Google reviews</string>
+
+    <!-- Offline/Profile -->
+    <string name="offline_banner_message">You’re offline — showing cached data</string>
+    <string name="profile_offline_no_cache">You’re offline and there’s no cached profile data.</string>
+    <string name="profile_error_generic">Error.</string>
+
+    <!-- App language (used by your language switcher) -->
+    <string name="app_language_button">Language</string>
+    <string name="app_language_header">App language</string>
+    <string name="app_language_system">Use system language</string>
+
+
+    <string name="channel_nearby_name">Nearby establishments</string>
+    <string name="channel_nearby_desc">Alerts when you\'re near a pastry shop with reviews</string>
+    <string name="notif_nearby_title_prefix">You\'re near:</string>
+    <string name="notif_nearby_distance">Within 50 m</string>
+
+</resources>

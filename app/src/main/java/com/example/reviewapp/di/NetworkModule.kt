@@ -1,4 +1,3 @@
-// di/NetworkModule.kt
 package com.example.reviewapp.di
 
 import com.example.reviewapp.BuildConfig

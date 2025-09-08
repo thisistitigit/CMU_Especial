@@ -25,17 +25,25 @@ fun HistoryScreen(
     val state by viewModel.ui.collectAsState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = { AppHeader(title = stringResource(R.string.history_title)) }
     ) { inner ->
         when {
-            state.isLoading -> Box(Modifier.fillMaxSize().padding(inner)) {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
+            state.isLoading -> Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(inner),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
 
-            state.error != null -> Box(Modifier.fillMaxSize().padding(inner)) {
+            state.error != null -> Box(
+                Modifier
+                    .fillMaxSize()
+                    .padding(inner),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
                     text = stringResource(R.string.history_error_prefix, state.error ?: ""),
-                    modifier = Modifier.align(Alignment.Center),
                     color = MaterialTheme.colorScheme.error
                 )
             }
@@ -46,16 +54,37 @@ fun HistoryScreen(
                     .padding(inner)
             ) {
                 OfflineBanner()
+                Spacer(Modifier.height(8.dp))
+
+                if (state.items.isEmpty()) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.history_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    return@Column
+                }
 
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(
                         items = state.items,
                         key = { "${it.placeId}_${it.createdAt}" }
                     ) { row ->
-                        HistoryItem(row, onOpen = { onOpenPlaceDetails(row.placeId) })
+                        HistoryItem(
+                            row = row,
+                            onOpen = { onOpenPlaceDetails(row.placeId) }
+                        )
                     }
                 }
             }

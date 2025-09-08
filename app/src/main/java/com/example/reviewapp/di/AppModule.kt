@@ -1,4 +1,3 @@
-    // di/AppModule.kt
     package com.example.reviewapp.di
 
     import android.content.Context
@@ -28,28 +27,24 @@
     @InstallIn(SingletonComponent::class)
     object AppModule {
 
-        // Room
         @Provides @Singleton
         fun provideDb(@ApplicationContext ctx: Context): AppDatabase =
             Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db")
-                .addMigrations(MIGRATION_1_2)   // ⬅️ adiciona todas as migrações necessárias
+                .addMigrations(MIGRATION_1_2)
                 .build()
 
         @Provides fun providePlaceDao(db: AppDatabase): PlaceDao = db.placeDao()
         @Provides fun provideReviewDao(db: AppDatabase): ReviewDao = db.reviewDao()
 
-        // Firebase
         @Provides @Singleton fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
         @Provides @Singleton fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
         @Provides @Singleton fun provideStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
-        // 🔑 Google Places Web Service key (do secrets.xml)
         @Provides @Singleton
         @Named("GOOGLE_PLACES_KEY")
         fun provideGooglePlacesKey(@ApplicationContext ctx: Context): String =
             ctx.getString(R.string.google_places_key)
 
-        // Repositório
         @Provides @Singleton
         fun providePlaceRepository(
             placeDao: PlaceDao,
@@ -62,10 +57,10 @@
         fun provideReviewRepository(
             reviewDao: ReviewDao,
             placeDao: PlaceDao,
-            firestore: FirebaseFirestore?,   // se usares nullable no repo
-            storage: FirebaseStorage?,       // idem
+            firestore: FirebaseFirestore?,
+            storage: FirebaseStorage?,
             auth: FirebaseAuth,
-            @ApplicationContext context: Context   // <-- FALTAVA ISTO
+            @ApplicationContext context: Context
         ): ReviewRepository = ReviewRepositoryImpl(
             reviewDao = reviewDao,
             placeDao = placeDao,

@@ -14,13 +14,11 @@ open class BaseActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Só notificações aqui. Localização é toda gerida pelo LocationPermissionGate nos ecrãs.
         checkNotificationPermissionIfNeeded()
     }
 
-    /* ---------- NOTIFICAÇÕES (Android 13+) ---------- */
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* noop */ }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) {  }
 
     private fun checkNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

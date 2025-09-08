@@ -58,14 +58,11 @@ class ReviewRepositoryImpl(
     ) {
         val uid = auth.requireSignedInUid()
 
-        // Regras antes de gravar
         enforceCanReviewOrThrow(uid, review.placeId, userLat, userLng, now)
 
-        // Local (sempre)
         val normalized = review.copy(userId = uid, createdAt = now)
         reviewDao.upsert(normalized.toEntity())
 
-        // Firestore: doc sem foto (cache offline trata do resto)
         firestore?.let { db -> runCatching { saveReviewDocs(db, normalized, null) } }
 
         // Foto (tenta já; senão agenda)

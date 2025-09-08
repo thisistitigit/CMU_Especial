@@ -3,12 +3,11 @@ package com.example.reviewapp.network.mappers
 import com.example.reviewapp.data.locals.ReviewEntity
 import com.example.reviewapp.data.models.Review
 
-// ---- Mapeadores ----
 fun Review.toEntity() = ReviewEntity(
    id = id,
    placeId = placeId,
-   placeName = placeName,           // NOVO
-   placeAddress = placeAddress,     // NOVO
+   placeName = placeName,
+   placeAddress = placeAddress,
    userId = userId,
    userName = userName,
    pastryName = pastryName,
@@ -22,8 +21,8 @@ fun Review.toEntity() = ReviewEntity(
 fun ReviewEntity.toModel() = Review(
    id = id,
    placeId = placeId,
-   placeName = placeName,           // NOVO
-   placeAddress = placeAddress,     // NOVO
+   placeName = placeName,
+   placeAddress = placeAddress,
    userId = userId,
    userName = userName,
    pastryName = pastryName,

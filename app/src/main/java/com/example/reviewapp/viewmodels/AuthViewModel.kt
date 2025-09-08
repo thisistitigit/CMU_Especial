@@ -71,20 +71,16 @@ class AuthViewModel @Inject constructor(
                     return@addOnCompleteListener
                 }
 
-                // Garante token fresco
                 auth.currentUser?.getIdToken(true)
                     ?.addOnSuccessListener {
                         val unameRef = db.collection("usernames").document(usernameLower)
                         val userRef  = db.collection("users").document(uid)
 
-                        // 1) Reserva do username (create se não existir; se existir → dá PERMISSION_DENIED por update)
                         unameRef.set(
                             mapOf("uid" to uid, "createdAt" to FieldValue.serverTimestamp())
                         ).addOnSuccessListener {
-                            // 2) Criar ou completar o doc do utilizador
                             userRef.get().addOnSuccessListener { snap ->
                                 if (snap.exists()) {
-                                    // Primeiro preenchimento (apenas estes 2 campos, como as regras exigem)
                                     userRef.update(
                                         mapOf(
                                             "username" to username,
@@ -123,8 +119,6 @@ class AuthViewModel @Inject constructor(
                                 onResult(false, "profile_create_failed")
                             }
                         }.addOnFailureListener { t ->
-                            // Se o /usernames/{usernameLower} já existir, as regras só permitem CREATE,
-                            // por isso o set vira UPDATE -> PERMISSION_DENIED. Tratamos como username_taken.
                             val fse = t as? com.google.firebase.firestore.FirebaseFirestoreException
                             Log.e("Auth", "reserve username failed", t)
                             if (fse?.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED ||

@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- já existentes -->
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- brand cream/beige usado no tema claro -->
     <color name="brand_cream">#FFF6EFE6</color>
+    <color name="neutral_on_light">#1C1B1F</color>
+    <color name="brand_black">#FF000000</color>
+    <color name="neutral_on_dark">#E6E1E5</color>
+    <color name="brand_lilac">#FFE3A4F7</color>
 
-    <!-- Splash e fallback layer-list usam esta cor -->
     <color name="splash_background">@color/brand_cream</color>
 </resources>

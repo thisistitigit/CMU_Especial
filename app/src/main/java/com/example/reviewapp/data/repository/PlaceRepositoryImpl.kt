@@ -31,7 +31,6 @@ class PlaceRepositoryImpl(
     private fun String.mask(): String =
         if (length <= 8) "****" else "${take(4)}****${takeLast(4)}"
 
-    // ---------- Helpers de enrich ----------
     private fun isLikelyGooglePlaceId(id: String): Boolean =
         !id.contains(",") && !id.contains(":")
 
@@ -50,7 +49,6 @@ class PlaceRepositoryImpl(
             category = base.category ?: details.category
         )
 
-    // ---------- Nearby (com cache no Room) ----------
     private suspend fun fetchAround(
         lat: Double,
         lng: Double,
@@ -95,7 +93,6 @@ class PlaceRepositoryImpl(
             val resp = api.details(
                 placeId = placeId,
                 apiKey = googleApiKey,
-                // fields otimizados para telefone/ratings/geom/nome/morada
                 fields = "place_id,name,formatted_address,formatted_phone_number,geometry,rating,user_ratings_total,types"
             )
             if (resp.status != "OK") return null
@@ -121,23 +118,18 @@ class PlaceRepositoryImpl(
     override suspend fun leaderboard(limit: Int): List<Place> =
         placeDao.leaderboard(limit).map { it.toModel() }
 
-    // ---------- NOVO: enrich ----------
     override suspend fun enrichIds(placeIds: Collection<String>): Map<String, Place> {
         if (placeIds.isEmpty()) return emptyMap()
 
-        // 1) lê do Room de uma vez
         val locals = placeIds.mapNotNull { id -> placeDao.get(id)?.toModel()?.let { id to it } }.toMap()
 
-        // 2) decide quem precisa de detalhes
         val toFetch = placeIds.filter { id ->
             val local = locals[id]
-            // Só vale a pena bater na API se for um id da Google e faltar algo
             (local == null || needsDetails(local)) && isLikelyGooglePlaceId(id)
         }.distinct()
 
         if (toFetch.isEmpty()) return locals
 
-        // 3) limita a concorrência (evitar bursts de quota)
         val sem = Semaphore(4)
 
         val fetched: Map<String, Place> = coroutineScope {
@@ -151,7 +143,6 @@ class PlaceRepositoryImpl(
             }.awaitAll().filterNotNull().toMap()
         }
 
-        // 4) merge (locals + fetched) -> devolve o melhor Place por id
         val result = LinkedHashMap<String, Place>()
         for (id in placeIds) {
             val base = locals[id]

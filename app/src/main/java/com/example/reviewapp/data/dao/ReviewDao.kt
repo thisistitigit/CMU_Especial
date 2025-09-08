@@ -5,10 +5,7 @@ import androidx.room.Database
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.RoomDatabase
-import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.locals.ReviewEntity
-// ReviewDao.kt
 @Dao
 interface ReviewDao {
     @Query("SELECT * FROM reviews WHERE placeId = :placeId ORDER BY createdAt DESC LIMIT 10")

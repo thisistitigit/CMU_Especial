@@ -1,4 +1,3 @@
-// com/example/reviewapp/ui/screens/SearchScreen.kt
 package com.example.reviewapp.ui.screens
 
 import android.content.Context
@@ -58,7 +57,6 @@ fun SearchScreen(
     var geocodingInFlight by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    // Ordenação
     var sortState by remember { mutableStateOf(PlaceSortState(selected = PlaceSort.GOOGLE_RATING)) }
     val sortedPlaces = remember(state.places, sortState, state.searchCenter) {
         applyPlaceSort(state.places, sortState, state.searchCenter)
@@ -69,12 +67,10 @@ fun SearchScreen(
             AppHeader(
                 title = stringResource(R.string.search_title),
                 actions = {
-                    // Header: só abre/fecha o campo (não pesquisa)
                     IconButton(onClick = { searchActive = !searchActive }) {
                         Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
                     }
 
-                    // Filtro de raio
                     Box {
                         IconButton(onClick = { showFilter = true }) {
                             Icon(Icons.Filled.FilterList, contentDescription = stringResource(R.string.action_filter))
@@ -96,7 +92,6 @@ fun SearchScreen(
                         }
                     }
 
-                    // Perfil
                     IconButton(onClick = onOpenProfile) {
                         Icon(Icons.Filled.AccountCircle, contentDescription = stringResource(R.string.search_profile_cd))
                     }
@@ -112,7 +107,6 @@ fun SearchScreen(
 
         Column(Modifier.padding(padding)) {
 
-            // Campo de pesquisa abaixo do header (apenas quando ativo)
             if (searchActive) {
                 Column(
                     Modifier
@@ -124,7 +118,6 @@ fun SearchScreen(
                         onValueChange = { query = it },
                         singleLine = true,
                         placeholder = { Text(stringResource(R.string.search_location_hint)) },
-                      //  leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         trailingIcon = {
                             Row {
                                 if (query.isNotBlank()) {
@@ -132,7 +125,6 @@ fun SearchScreen(
                                         Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.action_clear))
                                     }
                                 }
-                                // Pesquisa só aqui:
                                 IconButton(
                                     onClick = {
                                         if (query.isBlank() || geocodingInFlight) return@IconButton
@@ -145,7 +137,6 @@ fun SearchScreen(
                                     },
                                     enabled = query.isNotBlank() && !geocodingInFlight
                                 ) {
-                                    // usar string existente (hint) para evitar 'action_search' inexistente
                                     Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_location_hint))
                                 }
                             }
@@ -168,7 +159,6 @@ fun SearchScreen(
 
             OfflineBanner()
 
-            // ====== MAPA + interação de arrasto ======
             val cameraPositionState = rememberCameraPositionState {
                 position = CameraPosition.fromLatLngZoom(state.cameraLatLng, 15f)
             }
@@ -207,7 +197,6 @@ fun SearchScreen(
                     }
                 }
 
-                // Pin fixo no centro (subtil)
                 Box(
                     modifier = Modifier
                         .align(Alignment.Center)
@@ -218,7 +207,6 @@ fun SearchScreen(
                         )
                 )
 
-                // “Pesquisar aqui” quando o utilizador moveu o mapa
                 if (pendingCenter != null) {
                     ElevatedAssistChip(
                         onClick = {
@@ -234,9 +222,7 @@ fun SearchScreen(
                 }
             }
 
-            // ====== LISTA ======
             LazyColumn(Modifier.fillMaxSize()) {
-                // Cabeçalho: botão de ordenação
                 item {
                     Row(
                         modifier = Modifier

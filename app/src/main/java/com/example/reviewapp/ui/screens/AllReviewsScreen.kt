@@ -69,7 +69,6 @@ fun AllReviewsScreen(
                         .padding(padding)
                         .fillMaxSize()
                 ) {
-                    // ícones minimal (ordenar + filtro)
                     ReviewFiltersMinimal(
                         state = filters,
                         onChange = { filters = it },
@@ -80,7 +79,6 @@ fun AllReviewsScreen(
 
                     OfflineBanner()
 
-                    // contador após filtros
                     Text(
                         text = stringResource(R.string.reviews_count_filtered, filtered.size),
                         style = MaterialTheme.typography.bodySmall,

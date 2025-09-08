@@ -1,4 +1,3 @@
-// di/GeofenceReceiverEntryPoint.kt
 package com.example.reviewapp.di
 
 import com.example.reviewapp.data.dao.PlaceDao

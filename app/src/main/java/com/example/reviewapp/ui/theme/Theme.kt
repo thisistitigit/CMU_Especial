@@ -9,9 +9,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-/* ----------------- ColorScheme Material3 ----------------- */
 private val LightColors = lightColorScheme(
-    primary              = BrandLilacLight,   // lilás claro bem presente
+    primary              = BrandLilacLight,
     onPrimary            = Color.Black,
     primaryContainer     = BrandLilacDeep,
     onPrimaryContainer   = Color.White,
@@ -34,7 +33,7 @@ private val LightColors = lightColorScheme(
 )
 
 private val DarkColors = darkColorScheme(
-    primary              = BrandLilacDeep,    // no escuro usa o roxo mais forte
+    primary              = BrandLilacDeep,
     onPrimary            = Color.White,
     primaryContainer     = BrandLilacDeep,
     onPrimaryContainer   = Color.White,
@@ -56,13 +55,12 @@ private val DarkColors = darkColorScheme(
     onError              = Color.Black
 )
 
-/* ----------------- Extras do tema (navbar, etc.) ----------------- */
 data class AppExtraColors(
-    val navContainer: Color,      // fundo da navbar
-    val navShadow: Color,         // sombra da navbar
-    val navSelectedBg: Color,     // bolha por trás do ícone selecionado
-    val navSelectedIcon: Color,   // cor do ícone selecionado
-    val logout: Color             // vermelho para ações de logout
+    val navContainer: Color,
+    val navShadow: Color,
+    val navSelectedBg: Color,
+    val navSelectedIcon: Color,
+    val logout: Color
 )
 
 private val LocalAppColors = staticCompositionLocalOf {
@@ -80,7 +78,6 @@ object AppTheme {
         @Composable get() = LocalAppColors.current
 }
 
-/* ----------------- Theme composable ----------------- */
 @Composable
 fun ReviewAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -106,7 +103,7 @@ fun ReviewAppTheme(
             )
         } else {
             AppExtraColors(
-                navContainer    = NeutralSurfaceLight,     // combina com cream/surface
+                navContainer    = NeutralSurfaceLight,
                 navShadow       = BrandLilacDeep.copy(alpha = .35f),
                 navSelectedBg   = BrandLilacLight,
                 navSelectedIcon = BrandBlack,

@@ -1,4 +1,3 @@
-// com/example/reviewapp/ui/screens/ReviewFormScreen.kt
 package com.example.reviewapp.ui.screens
 
 import android.content.Context
@@ -56,7 +55,6 @@ fun ReviewFormScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // ouvir o evento Submitted → fechar
     LaunchedEffect(Unit) {
         vm.events.collect { ev ->
             if (ev is ReviewFormViewModel.Event.Submitted) onDone()
@@ -117,7 +115,7 @@ fun ReviewFormScreen(
                     Location.distanceBetween(loc.latitude, loc.longitude, pLat, pLng, r)
                     vm.setDistanceMeters(r[0].toDouble())
                 } else {
-                    vm.setUserLocation(pLat, pLng) // fallback: não bloqueia
+                    vm.setUserLocation(pLat, pLng)
                     vm.setDistanceMeters(0.0)
                 }
             } else {
@@ -194,7 +192,6 @@ fun ReviewFormScreen(
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
-                    // Foto (preview)
                     if (!state.photoLocalPath.isNullOrBlank()) {
                         AsyncImage(
                             model = state.photoLocalPath,
@@ -209,7 +206,6 @@ fun ReviewFormScreen(
                         }
                     }
 
-                    // Doce / Pastel
                     OutlinedTextField(
                         value = state.pastryName,
                         onValueChange = vm::onPastryChanged,
@@ -218,10 +214,8 @@ fun ReviewFormScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Estrelas
                     StarSelector(selected = state.stars, onChange = vm::onStarsChanged)
 
-                    // Comentário
                     OutlinedTextField(
                         value = state.comment,
                         onValueChange = vm::onCommentChanged,
@@ -230,7 +224,6 @@ fun ReviewFormScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Ações de imagem
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -263,7 +256,6 @@ fun ReviewFormScreen(
                         }
                     }
 
-                    // Submeter
                     Button(
                         enabled = state.canSubmit && state.rulesOk && !state.isSubmitting,
                         onClick = { scope.launch { vm.submit() } },
@@ -277,7 +269,6 @@ fun ReviewFormScreen(
                         }
                     }
 
-                    // Mensagem de regras/erros
                     if (!state.rulesOk || state.ruleMessage != null) {
                         Text(
                             text = when (state.ruleMessage) {

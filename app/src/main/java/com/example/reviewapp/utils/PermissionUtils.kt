@@ -34,7 +34,6 @@ object PermissionUtils {
         ) == PackageManager.PERMISSION_GRANTED
         return fine || coarse
     }
-    // PermissionUtils.kt (já tens algo parecido — acrescenta este)
     fun hasBackgroundLocationPermission(context: Context): Boolean {
         return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
             ContextCompat.checkSelfPermission(

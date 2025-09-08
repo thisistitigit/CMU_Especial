@@ -1,0 +1,267 @@
+<resources>
+    <string name="app_name" translatable="false">BITE</string>
+
+    <!-- ====== Detalles del Establecimiento ====== -->
+    <string name="details_title">Detalles del establecimiento</string>
+    <string name="details_back">Volver</string>
+    <string name="details_review_cta">Valorar</string>
+
+    <!-- Encabezado / Info principal -->
+    <string name="place_name">Nombre del establecimiento</string>
+    <string name="place_category">Dulce evaluado</string>
+    <string name="place_score">Puntuación</string>
+    <string name="place_phone">Teléfono</string>
+    <string name="place_phone_none">Sin teléfono</string>
+    <string name="place_call_action">Llamar</string>
+    <string name="place_call_action_with_number">Llamar: %1$s</string>
+    <string name="place_address">Dirección</string>
+    <string name="place_coords">Coordenadas</string>
+    <string name="place_lat_lng" translatable="false">%1$.6f, %2$.6f</string>
+    <string name="place_location">Ubicación</string>
+    <string name="place_view_on_map">Ver en el mapa</string>
+    <string name="place_get_directions">Obtener direcciones</string>
+
+    <!-- Reseñas -->
+    <string name="ratings_google_title">Valoración Google</string>
+    <string name="ratings_internal_title">Valoración interna</string>
+    <string name="ratings_average">Media</string>
+    <string name="ratings_from_users">de usuarios</string>
+    <plurals name="ratings_count">
+        <item quantity="one">%1$d valoración</item>
+        <item quantity="other">%1$d valoraciones</item>
+    </plurals>
+    <string name="ratings_not_available">Sin valoraciones</string>
+
+    <!-- Sección de reseñas -->
+    <string name="reviews_all_title">Todos los comentarios</string>
+    <string name="reviews_view_all">Ver todos</string>
+    <string name="reviews_section_title_top10">Top 10 comentarios</string>
+    <string name="reviews_empty">Aún no hay reseñas para este lugar.</string>
+    <string name="review_user_name">Nombre del usuario</string>
+    <string name="review_pastry_name">Dulce evaluado</string>
+    <string name="review_comment">Comentario</string>
+    <string name="review_rating">Nota</string>
+    <string name="review_date">Fecha</string>
+    <string name="review_add">Añadir reseña</string>
+    <string name="review_see_more">Ver más</string>
+    <string name="review_see_less">Ver menos</string>
+
+    <!-- Fotos -->
+    <string name="photo_device">Foto en el dispositivo</string>
+    <string name="photo_cloud">Foto en la nube</string>
+    <string name="photo_optional_hint">(opcional)</string>
+
+    <!-- Estados -->
+    <string name="state_loading">Cargando…</string>
+    <string name="state_error">Ocurrió un error. Intenta de nuevo.</string>
+    <string name="state_retry">Reintentar</string>
+
+    <!-- Accesibilidad -->
+    <string name="cd_navigate_back">Navegar hacia atrás</string>
+    <string name="cd_call_place">Llamar al establecimiento</string>
+    <string name="cd_place_photo">Foto del establecimiento</string>
+    <string name="cd_user_photo">Foto del usuario</string>
+    <string name="cd_rating_stars">Clasificación en estrellas: %1$.1f de 5</string>
+
+    <!-- Formatos -->
+    <string name="format_score_with_count" translatable="false">%1$.1f (%2$s)</string>
+    <string name="format_phone_label" translatable="false">%1$s: %2$s</string>
+
+    <!-- Bottom bar -->
+    <string name="bottom_home">Inicio</string>
+    <string name="bottom_search">Explorar</string>
+    <string name="bottom_history">Historial</string>
+    <string name="bottom_profile">Perfil</string>
+    <string name="cd_bottom_item">Abrir pestaña: %1$s</string>
+
+    <!-- Placeholder -->
+    <string name="placeholder_leaderboard">Top lugares (Leaderboard)</string>
+    <string name="placeholder_history">Mi historial</string>
+    <string name="authgate_preparing">Preparando…</string>
+    <string name="history_empty">Tu historial está vacío</string>
+
+    <!-- Auth -->
+    <string name="auth_title_register">Crear cuenta</string>
+    <string name="auth_title_login">Iniciar sesión</string>
+    <string name="profile_title" translatable="false"> </string>
+    <string name="field_username_unique">Usuario (único)</string>
+    <string name="field_email">Correo</string>
+    <string name="field_password">Contraseña</string>
+    <string name="field_confirm_password">Confirmar contraseña</string>
+    <string name="action_create_account">Crear cuenta</string>
+    <string name="action_sign_in">Entrar</string>
+    <string name="action_have_account">Ya tengo cuenta</string>
+    <string name="action_logout" translatable="false">Logout</string>
+    <string name="status_registering">Registrando...</string>
+    <string name="status_signing_in">Entrando...</string>
+
+    <!-- Labels -->
+    <string name="label_username" translatable="false">Usuario:</string>
+    <string name="label_email" translatable="false">Correo:</string>
+    <string name="label_error">Error:</string>
+    <string name="placeholder_na">No disponible</string>
+
+    <!-- Errores -->
+    <string name="error_passwords_mismatch">Las contraseñas no coinciden.</string>
+    <string name="error_username_invalid">Usuario inválido. Usa 3–20 caracteres: a–z, 0–9 o _.</string>
+    <string name="error_username_taken">Ese usuario ya existe.</string>
+    <string name="error_register_failed">Error en el registro. Intenta de nuevo.</string>
+    <string name="error_profile_create_failed">Error al crear el perfil.</string>
+    <string name="error_not_authenticated">No autenticado.</string>
+    <string name="error_login_failed">Error al iniciar sesión. Intenta de nuevo.</string>
+    <string name="error_generic">Ocurrió un error. Intenta de nuevo.</string>
+
+    <!-- Home -->
+    <string name="home_empty">Aún no hay resultados aquí.</string>
+    <string name="home_loading">Cargando…</string>
+    <string name="home_error">Error al cargar. Intenta de nuevo.</string>
+    <string name="home_sort_distance">Distancia</string>
+    <string name="home_explore_map">Explorar en el mapa</string>
+    <string name="home_suggestions_title">Sugerencias cerca de ti</string>
+    <string name="home_nearby_title">Cerca de ti</string>
+    <string name="home_search_results_title">Resultados de búsqueda</string>
+
+    <!-- Search -->
+    <string name="search_profile_cd">Perfil</string>
+    <string name="search_in_this_area">Buscar en esta zona</string>
+    <string name="radius_label">Radio</string>
+    <string name="action_filter">Filtrar</string>
+    <string name="filter_radius_title">Radio de búsqueda</string>
+    <string name="search_location_hint">Buscar lugar</string>
+    <string name="search_here">Buscar aquí</string>
+    <string name="drag_to_move_map">Arrastra el mapa para cambiar la zona</string>
+    <string name="action_search">Buscar</string>
+
+    <!-- Leaderboard -->
+    <string name="leaderboard_tab_establishments">Establecimientos</string>
+    <string name="leaderboard_tab_pastries">Dulces</string>
+    <string name="leaderboard_empty_establishments">Aún no hay establecimientos con valoraciones internas.</string>
+    <string name="leaderboard_empty_pastries">Aún no hay dulces evaluados.</string>
+    <string name="reviews_short">reseñas</string>
+    <string name="pastry_label">Dulce</string>
+
+    <!-- Review form -->
+    <string name="review_new_title">Nueva reseña</string>
+    <string name="field_pastry">Dulce</string>
+    <string name="field_comment">Comentario</string>
+    <string name="action_take_photo">Tomar foto</string>
+    <string name="action_remove_photo">Eliminar foto</string>
+    <string name="action_pick_gallery">Elegir de la galería</string>
+    <string name="action_submit">Enviar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="rules_not_met">Debes estar a ≤ 50 m y haber pasado 30 minutos desde la última reseña.</string>
+
+    <!-- Review details -->
+    <string name="review_details_title">Detalle de la reseña</string>
+    <string name="review_open_external">Abrir imagen</string>
+    <string name="review_photo">Foto de la reseña</string>
+    <string name="review_no_photo">Sin foto</string>
+
+    <!-- Histórico -->
+    <string name="history_error_prefix">Error: %1$s</string>
+
+    <!-- Localización -->
+    <string name="error_enable_location">Activa la ubicación para valorar en el sitio.</string>
+    <string name="hint_grant_location_permission">Concede permiso de ubicación para valorar en el sitio.</string>
+    <string name="hint_enable_gps">Activa el GPS del dispositivo.</string>
+    <string name="hint_fetching_location">Obteniendo ubicación…</string>
+
+    <!-- Filtros -->
+    <string name="reviews_sort_oldest_first">Más antiguo → reciente</string>
+    <string name="reviews_sort_newest_first">Más reciente → antiguo</string>
+    <string name="reviews_filter_with_photo">Con foto</string>
+    <string name="reviews_filter_only_mine">Solo mías</string>
+    <string name="reviews_filter_min_stars">Mín. estrellas</string>
+    <string name="reviews_filter_any_stars">Cualquier nº de estrellas</string>
+    <string name="reviews_filter_min_stars_value">%1$d★ o más</string>
+
+    <string name="reviews_count_filtered">%1$d reseña(s)</string>
+    <string name="home_best_rated_title">Nuestros usuarios recomiendan</string>
+    <string name="leaderboard_rating_count_inline">%1$d valoraciones</string>
+
+    <string name="search_filter_button">Filtro</string>
+    <string name="search_sort_header">Ordenar por</string>
+    <string name="search_sort_default">Predeterminado</string>
+    <string name="search_sort_google_rating">Valoración Google</string>
+    <string name="search_sort_distance_asc">Distancia (más cerca primero)</string>
+    <string name="search_sort_rating_count">Más valoraciones Google</string>
+
+    <!-- Offline -->
+    <string name="offline_banner_message">Estás sin conexión — mostrando datos en caché</string>
+    <string name="profile_offline_no_cache">Estás sin conexión y no hay datos en caché para el perfil.</string>
+    <string name="profile_error_generic">Error.</string>
+
+    <string name="app_language_button">Idioma</string>
+    <string name="app_language_header">Idioma de la aplicación</string>
+    <string name="app_language_system">Usar idioma del sistema</string>
+
+
+
+    <string name="action_details">Detalles</string>
+    <string name="action_review">Valorar</string>
+    <string name="action_try_again">Intentar de nuevo</string>
+    <string name="action_open_settings">Abrir ajustes</string>
+    <string name="action_allow_location">Permitir ubicación</string>
+    <string name="action_my_location">Mi ubicación</string>
+
+    <string name="error_not_authenticated_after_register">Usuario no autenticado tras el registro.</string>
+    <string name="action_clear">Limpiar</string>
+
+    <!-- Content descriptions / A11y -->
+    <string name="cd_review_photo">Foto de la pastelería</string>
+    <string name="cd_star_icon">Estrella</string>
+    <string name="cd_open_details">Abrir detalles</string>
+
+    <!-- Modal de ubicación -->
+    <string name="location_modal_title">Activar acceso a la ubicación (1.º y 2.º plano)</string>
+
+    <!-- Primer paso: foreground -->
+    <string name="location_modal_body_fg">
+        Paso 1 — Autoriza la ubicación **en primer plano** (“Mientras se usa la app”).
+        Esto permite calcular la distancia y mostrar resultados cerca de ti.
+        Después, será necesario activar el acceso en segundo plano.
+    </string>
+
+    <!-- Segundo paso: background -->
+    <string name="location_modal_body_bg">
+        Obligatorio para notificaciones de proximidad y geofencing: activa la ubicación
+        **en segundo plano** (“Permitir siempre”). Sin este permiso la app no podrá
+        avisarte cuando te acerques a un establecimiento con reseñas, incluso con la app cerrada.
+    </string>
+
+    <!-- Ruta en ajustes -->
+    <string name="location_modal_hint_path">
+        Ruta: Ajustes de la aplicación → Permisos → Ubicación → Permitir siempre
+    </string>
+
+    <!-- Acciones -->
+    <string name="location_modal_action_allow_while_using">Autorizar ubicación (1.º plano)</string>
+    <string name="location_modal_action_allow_always_open_settings">Abrir Ajustes para “Permitir siempre”</string>
+    <string name="location_modal_open_settings">Abrir Ajustes</string>
+    <string name="location_modal_not_now">Ahora no</string>
+
+    <!-- Usuario -->
+    <string name="user_generic">Usuario</string>
+
+    <!-- Perfil -->
+    <string name="profile_overview_title">Tus datos</string>
+
+    <!-- Errores genéricos -->
+    <string name="error_fill_fields">Rellena los campos y elige las estrellas.</string>
+    <string name="error_submit_generic">No se pudo enviar la reseña. Intenta de nuevo.</string>
+
+    <!-- Distancia/Tiempo -->
+    <string name="error_too_far">Estás lejos del lugar (límite ~%1$d m).</string>
+    <string name="error_too_far_live">Estás lejos del lugar (≈%1$d m; límite %2$d m).</string>
+    <string name="error_too_soon">Aún no han pasado %1$d minutos desde la última reseña.</string>
+    <string name="error_too_soon_live">Espera ~%1$d min para una nueva reseña.</string>
+    <string name="perm_rationale">La app necesita tu ubicación para centrar el mapa cerca de ti.</string>
+    <string name="perm_denied_permanent">Permiso de ubicación desactivado. Concede acceso para centrar el mapa en tu posición.</string>
+
+
+    <string name="channel_nearby_name">Establecimientos cercanos</string>
+    <string name="channel_nearby_desc">Alertas cuando estás cerca de una pastelería con reseñas</string>
+    <string name="notif_nearby_title_prefix">Estás cerca:</string>
+    <string name="notif_nearby_distance">A menos de 50 m</string>
+
+</resources>

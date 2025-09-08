@@ -34,7 +34,7 @@ sealed class Route(val route: String) {
     data object AuthGate   : Route("authGate")
     data object Login      : Route("login")
     data object Register   : Route("register")
-    data object Main       : Route("main")     // <- tabs vivem aqui
+    data object Main       : Route("main")
 
     data object Home       : Route("home")
     data object Search     : Route("search")
@@ -46,7 +46,7 @@ sealed class Route(val route: String) {
         fun build(id: String) = "details/${Uri.encode(id)}"
     }
     data object ReviewForm : Route("review/{placeId}?lat={lat}&lng={lng}") {
-        fun build(id: String) = "review/${Uri.encode(id)}" // continua a existir (back-compat)
+        fun build(id: String) = "review/${Uri.encode(id)}"
         fun build(id: String, lat: Double?, lng: Double?): String {
             val base = "review/${Uri.encode(id)}"
             return if (lat != null && lng != null) "$base?lat=$lat&lng=$lng" else base
@@ -80,11 +80,9 @@ fun AppNavGraph(nav: NavHostController) {
             startDestination = Route.AuthGate.route,
             modifier = Modifier.padding(innerPadding)
         ) {
-            // ---------- Auth gate ----------
             composable(Route.AuthGate.route) {
                 val vm: AuthViewModel = hiltViewModel()
                 LaunchedEffect(Unit) {
-                    // Depois do auth, vamos para o GRAFO MAIN (não para Home direto)
                     val target = if (vm.isLoggedIn()) Route.Main.route else Route.Login.route
                     nav.navigate(target) {
                         popUpTo(Route.AuthGate.route) { inclusive = true }
@@ -96,7 +94,6 @@ fun AppNavGraph(nav: NavHostController) {
                 }
             }
 
-            // ---------- Login & Register ----------
             composable(Route.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
@@ -120,12 +117,10 @@ fun AppNavGraph(nav: NavHostController) {
                 )
             }
 
-            // ---------- MAIN: tabs + ecrãs sem bottom bar ----------
             navigation(
                 startDestination = Route.Home.route,
                 route = Route.Main.route
             ) {
-                // Tabs (todas aqui dentro)
                 composable(Route.Home.route) { backStackEntry ->
                     val parentEntry = remember(backStackEntry) { nav.getBackStackEntry(Route.Main.route) }
                     val sharedVm: SearchViewModel = hiltViewModel(parentEntry)
@@ -161,8 +156,6 @@ fun AppNavGraph(nav: NavHostController) {
                         }
                     )
                 }
-
-                // Sem bottom bar
                 composable(
                     route = Route.Details.route,
                     arguments = listOf(navArgument("placeId") { type = NavType.StringType })
@@ -172,8 +165,8 @@ fun AppNavGraph(nav: NavHostController) {
                     DetailsScreen(
                         placeId = placeId,
                         onBack = { nav.popBackStack() },
-                        onReview = { id, lat, lng ->                      // <- recebe os 3
-                            nav.navigate(Route.ReviewForm.build(id, lat, lng))}, // <- usa o id
+                        onReview = { id, lat, lng ->
+                            nav.navigate(Route.ReviewForm.build(id, lat, lng))},
                         onOpenReviewDetails = { reviewId -> nav.navigate(Route.ReviewDetails.build(reviewId)) },
                         onOpenAllReviews = { id -> nav.navigate(Route.ReviewsAll.build(id)) }
                     )
@@ -192,7 +185,7 @@ fun AppNavGraph(nav: NavHostController) {
 
                     ReviewFormScreen(
                         placeId = placeId,
-                        navPlaceLat = navLat,            // <- passa para o ecrã
+                        navPlaceLat = navLat,
                         navPlaceLng = navLng,
                         onDone = { nav.popBackStack() },
                         onCancel = { nav.popBackStack() }

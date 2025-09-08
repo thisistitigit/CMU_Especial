@@ -63,7 +63,7 @@ fun rememberLocationPermissionState(
     }
 
     val ask: () -> Unit = ask@{
-        if (isGranted()) return@ask  // <- early return correto
+        if (isGranted()) return@ask
 
         if (canAskAgain) {
             launcher.launch(
@@ -73,7 +73,6 @@ fun rememberLocationPermissionState(
                 )
             )
         } else {
-            // Negado com "Não voltar a perguntar" → abrir definições
             val intent = Intent(
                 Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                 Uri.fromParts("package", context.packageName, null)

@@ -29,8 +29,8 @@ fun QuerySnapshot.toReviews(): List<Review> =
             Review(
                 id = dto.id,
                 placeId = dto.placeId.trim(),
-                placeName = dto.placeName.ifBlank { null },   // NOVO
-                placeAddress = dto.placeAddress,               // NOVO
+                placeName = dto.placeName.ifBlank { null },
+                placeAddress = dto.placeAddress,
                 userId = dto.userId,
                 userName = dto.userName,
                 pastryName = dto.pastryName,

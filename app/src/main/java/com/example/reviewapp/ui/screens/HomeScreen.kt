@@ -30,8 +30,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private enum class HomeSort { Rating }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -49,13 +47,11 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
 
-    // Gate de permissões → quando tudo ok, arranca "perto de mim"
     LocationPermissionGate(
         autoShowIfNeeded = true,
         onAllGranted = { vm.refreshNearMe() }
     )
 
-    // limpar barra = voltar às sugestões
     LaunchedEffect(query, isSearching) {
         if (query.isBlank() && !isSearching) showingSearch = false
     }
@@ -69,7 +65,6 @@ fun HomeScreen(
                 .fillMaxSize()
         ) {
 
-            // === Barra de pesquisa (logo abaixo do header) ===
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -112,10 +107,7 @@ fun HomeScreen(
                 )
             }
 
-            // Banner offline
             OfflineBanner()
-
-            // header / loading spinner
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -153,7 +145,6 @@ fun HomeScreen(
                     }
                 }
             } else {
-                // Sugestões “Perto de mim”
                 if (nearOrdered.isNotEmpty()) {
                     PlaceHorizontalSection(
                         title = stringResource(R.string.home_suggestions_title),
@@ -167,8 +158,7 @@ fun HomeScreen(
                     }
                 }
 
-                // Ranking (top avaliações)
-                val topRated = lb.establishments.take(12) // top 12
+                val topRated = lb.establishments.take(12)
                 if (topRated.isNotEmpty()) {
                     LeaderboardHorizontalSection(
                         title = stringResource(R.string.home_best_rated_title),

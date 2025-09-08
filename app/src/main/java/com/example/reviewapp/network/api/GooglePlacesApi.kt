@@ -8,16 +8,15 @@ import retrofit2.http.Query
 interface GooglePlacesApi {
     @GET("nearbysearch/json")
     suspend fun nearby(
-        @Query("location") location: String,   // "lat,lng"
-        @Query("radius") radius: Int,         // em metros (máx 50 000)
-        @Query("type") type: String? = null,  // e.g., "bakery" ou "cafe"
+        @Query("location") location: String,
+        @Query("radius") radius: Int,
+        @Query("type") type: String? = null,
         @Query("keyword") keyword: String? = null,
         @Query("key") apiKey: String
     ): GooglePlacesResponse
     @GET("details/json")
     suspend fun details(
         @Query("place_id") placeId: String,
-        // só pedimos o que vamos guardar — poupa quota
         @Query("fields")
         fields: String = "place_id,name,formatted_address,formatted_phone_number,geometry/location,rating,user_ratings_total,types",
         @Query("key") apiKey: String

@@ -2,6 +2,7 @@ package com.example.reviewapp.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -13,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -24,32 +27,51 @@ fun HistoryItem(
     row: HistoryViewModel.Row,
     onOpen: () -> Unit
 ) {
-    Card(
+    ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clickable(onClick = onOpen),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
+            .clickable(role = Role.Button, onClick = onOpen),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor   = MaterialTheme.colorScheme.onSurface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        )
     ) {
-        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-
+        Row(
+            Modifier
+                .padding(14.dp)
+                .heightIn(min = 64.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             val model = row.photoLocalPath?.takeIf { it.isNotBlank() } ?: row.photoCloudUrl
             if (model != null) {
                 AsyncImage(
                     model = model,
                     contentDescription = stringResource(R.string.cd_review_photo),
                     modifier = Modifier
-                        .size(56.dp)
-                        .clip(RoundedCornerShape(12.dp)),
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
-                Spacer(Modifier.width(12.dp))
+            } else {
+                Surface(
+                    modifier = Modifier.size(64.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            text = initialsFrom(row.placeName),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
+
+            Spacer(Modifier.width(12.dp))
 
             Column(Modifier.weight(1f)) {
                 Text(
@@ -58,6 +80,7 @@ fun HistoryItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+
                 if (row.pastryName.isNotBlank()) {
                     Text(
                         row.pastryName,
@@ -67,13 +90,16 @@ fun HistoryItem(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+
+                Spacer(Modifier.height(4.dp))
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     repeat(row.stars.coerceIn(0, 5)) {
                         Icon(
-                            Icons.Default.Star,
+                            imageVector = Icons.Filled.Star,
                             contentDescription = stringResource(R.string.cd_star_icon),
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary // lilás do tema
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     Spacer(Modifier.width(8.dp))
@@ -85,12 +111,23 @@ fun HistoryItem(
                 }
             }
 
+            Spacer(Modifier.width(8.dp))
+
             Icon(
-                Icons.Default.ChevronRight,
+                Icons.Filled.ChevronRight,
                 contentDescription = stringResource(R.string.cd_open_details),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+private fun initialsFrom(name: String): String {
+    val parts = name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+    return when {
+        parts.isEmpty() -> "?"
+        parts.size == 1 -> parts.first().take(2).uppercase()
+        else -> (parts.first().first().toString() + parts.last().first()).uppercase()
     }
 }
 

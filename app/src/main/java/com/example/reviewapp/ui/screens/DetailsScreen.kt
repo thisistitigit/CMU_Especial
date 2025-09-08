@@ -1,21 +1,16 @@
-// com/example/reviewapp/ui/screens/DetailsScreen.kt
 package com.example.reviewapp.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Directions
-import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,7 +43,6 @@ fun DetailsScreen(
 
     LaunchedEffect(placeId) { vm.load(placeId) }
 
-    // Filtros visuais para a lista
     var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
 
     val filteredAll = remember(state.latestReviews, filters, uid) {
@@ -119,7 +113,6 @@ fun DetailsScreen(
                                 Column(Modifier.padding(16.dp)) {
                                     OfflineBanner()
 
-                                    // Categoria e morada
                                     place.category?.takeIf { it.isNotBlank() }?.let {
                                         Text(
                                             text = it,
@@ -136,7 +129,6 @@ fun DetailsScreen(
                                         )
                                     }
 
-                                    // Contacto
                                     Spacer(Modifier.height(10.dp))
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -165,7 +157,6 @@ fun DetailsScreen(
                                         }
                                     }
 
-                                    // Coordenadas (chipzinha)
                                     Spacer(Modifier.height(10.dp))
                                     AssistChip(
                                         onClick = {},
@@ -184,33 +175,7 @@ fun DetailsScreen(
                                         },
                                         shape = RoundedCornerShape(16.dp)
                                     )
-
-                                    // Ações
                                     Spacer(Modifier.height(12.dp))
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Button(
-                                            onClick = { vm.openOnMap(place.lat, place.lng, place.name) },
-                                            shape = RoundedCornerShape(14.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Filled.Map, contentDescription = null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.place_view_on_map))
-                                        }
-                                        FilledTonalButton(
-                                            onClick = { vm.getDirections(place.lat, place.lng) },
-                                            shape = RoundedCornerShape(14.dp),
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Filled.Directions, contentDescription = null)
-                                            Spacer(Modifier.width(8.dp))
-                                            Text(stringResource(R.string.place_get_directions))
-                                        }
-                                    }
                                 }
                             }
                         }

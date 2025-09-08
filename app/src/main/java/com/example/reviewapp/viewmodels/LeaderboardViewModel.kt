@@ -91,7 +91,6 @@ class LeaderboardViewModel @Inject constructor(
             .collect { state -> _ui.value = state }
     }
 
-    // ---- Aggregations (só com reviews) ----
     private fun aggregateEstablishmentsFromReviews(
         reviews: List<ReviewEntity>
     ): List<PlaceRow> {
@@ -139,11 +138,10 @@ class LeaderboardViewModel @Inject constructor(
         )
     }
 
-    // ---- Enriquecer linhas com nome/morada do Place (e cache p/ Detalhes) ----
     private suspend fun enrichRowsWithPlaces(rows: List<PlaceRow>): List<PlaceRow> {
         if (rows.isEmpty()) return rows
         val ids = rows.map { it.placeId }.distinct()
-        val map = placeRepo.enrichIds(ids) // cacheado no Room
+        val map = placeRepo.enrichIds(ids)
         return rows.map { r ->
             val p = map[r.placeId]
             r.copy(

@@ -1,4 +1,3 @@
-// app/src/main/java/com/example/reviewapp/geofence/GeofenceRegistrar.kt
 package com.example.reviewapp.geofence
 
 import android.app.PendingIntent
@@ -37,10 +36,8 @@ class GeofenceRegistrar @Inject constructor(
 
         val client = LocationServices.getGeofencingClient(ctx)
 
-        // 1) limpa os antigos ligados a este PI
         runCatching { client.removeGeofences(pendingIntent(ctx)).await() }
 
-        // 2) top 10 restaurantes perto
         val places = repo.nearby(
             lat, lng, searchRadiusMeters, setOf(PlaceType.RESTAURANT)
         ).take(10).filter { it.lat != 0.0 || it.lng != 0.0 }
@@ -50,12 +47,12 @@ class GeofenceRegistrar @Inject constructor(
         val geofences = places.map {
             Geofence.Builder()
                 .setRequestId(it.id)
-                .setCircularRegion(it.lat, it.lng, 1000f) // 50 m
+                .setCircularRegion(it.lat, it.lng, 50f)
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)
                 .setTransitionTypes(
                     Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL
                 )
-                .setLoiteringDelay(2 * 60 * 1000) // 2 min dwell para evitar spam
+                .setLoiteringDelay(2 * 60 * 1000)
                 .build()
         }
 
@@ -90,7 +87,6 @@ class GeofenceRegistrar @Inject constructor(
             client.checkLocationSettings(settingsReq).await()
             true
         } catch (e: ResolvableApiException) {
-            // Aqui poderias lançar um intent de resolução se estivesse num Activity
             false
         } catch (_: Throwable) {
             false

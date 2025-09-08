@@ -63,10 +63,8 @@ fun rememberIsOnline(): State<Boolean> {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            // API 24+: mais simples
             cm.registerDefaultNetworkCallback(callback)
         } else {
-            // API 21–23
             val req = NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .build()

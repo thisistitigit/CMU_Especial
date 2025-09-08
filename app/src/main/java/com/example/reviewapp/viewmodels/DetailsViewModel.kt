@@ -51,11 +51,9 @@ class DetailsViewModel @Inject constructor(
                 Triple(merged, Pair(avg, count), reviews)
             }.onStart {
                 _state.update { it.copy(isLoading = true, error = null) }
-                // 1) garantir que temos detalhes (se não houver em Room, vai à API e cacheia)
                 runCatching { placeRepo.getDetails(placeId) }
                     .onSuccess { Log.d(TAG, "getDetails ok para $placeId") }
                     .onFailure { Log.w(TAG, "getDetails falhou (Room/API): ${it.message}") }
-                // 2) garantir reviews atuais
                 reviewRepo.refreshPlaceReviews(placeId)
             }.catch { e ->
                 _state.update { it.copy(isLoading = false, error = e.message) }

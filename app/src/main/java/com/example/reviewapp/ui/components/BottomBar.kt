@@ -10,7 +10,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.reviewapp.R
 import com.example.reviewapp.ui.theme.AppTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hierarchy
 
 data class BottomItem(val route: String, val label: String, val icon: ImageVector)
@@ -28,18 +29,17 @@ data class BottomItem(val route: String, val label: String, val icon: ImageVecto
 @Composable
 fun BottomBar(nav: NavHostController, currentDest: NavDestination?) {
     val items = listOf(
-        BottomItem("home",        "Início",   Icons.Filled.Home),
-        BottomItem("search",      "Explorar", Icons.Filled.Search),
-        BottomItem("leaderboard", "Top",      Icons.Filled.Star),
-        BottomItem("history",     "Histórico",Icons.Filled.History),
-        BottomItem("profile",     "Perfil",   Icons.Filled.AccountCircle),
+        BottomItem("home", stringResource(R.string.bottom_home), Icons.Filled.Home),
+        BottomItem("search", stringResource(R.string.bottom_search), Icons.Filled.Search),
+        BottomItem("leaderboard", stringResource(R.string.bottom_leaderboard), Icons.Filled.Star),
+        BottomItem("history", stringResource(R.string.bottom_history), Icons.Filled.History),
+        BottomItem("profile", stringResource(R.string.bottom_profile), Icons.Filled.AccountCircle),
     )
 
-    // container com sombra lilás
     Surface(
         color = AppTheme.colors.navContainer,
-        shadowElevation = 12.dp,                 // sombra “física” (visível claro)
-        tonalElevation  = 0.dp,                  // mantem cor fiel
+        shadowElevation = 12.dp,
+        tonalElevation  = 0.dp,
         modifier = Modifier.fillMaxWidth()
     ) {
         NavigationBar(
@@ -47,7 +47,7 @@ fun BottomBar(nav: NavHostController, currentDest: NavDestination?) {
             tonalElevation = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 2.dp)             // pequena separação da sombra
+                .padding(top = 2.dp)
         ) {
             items.forEach { item ->
                 val selected = currentDest?.route == item.route ||
@@ -64,7 +64,6 @@ fun BottomBar(nav: NavHostController, currentDest: NavDestination?) {
                     },
                     icon = {
                         if (selected) {
-                            // “bolha” lilás clara com sombra roxa
                             Box(
                                 modifier = Modifier
                                     .size(36.dp)

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BITE</string>
+    <string name="app_name" translatable="false">BITE</string>
 
         <!-- ====== Detalhes do Estabelecimento ====== -->
         <string name="details_title">Detalhes do estabelecimento</string>
@@ -16,7 +16,7 @@
         <string name="place_call_action_with_number">Telefonar: %1$s</string>
         <string name="place_address">Endereço</string>
         <string name="place_coords">Coordenadas</string>
-        <string name="place_lat_lng">%1$.6f, %2$.6f</string>
+        <string name="place_lat_lng" translatable="false">%1$.6f, %2$.6f</string>
         <string name="place_location">Localização</string>
         <string name="place_view_on_map">Ver no mapa</string>
         <string name="place_get_directions">Obter direções</string>
@@ -64,28 +64,19 @@
         <string name="cd_rating_stars">Classificação em estrelas: %1$.1f em 5</string>
 
         <!-- Formatação auxiliar -->
-        <string name="format_score_with_count">%1$.1f (%2$s)</string> <!-- ex: "4,6 (123 avaliações)" -->
-        <string name="format_phone_label">%1$s: %2$s</string>
+        <string name="format_score_with_count" translatable="false">%1$.1f (%2$s)</string> <!-- ex: "4,6 (123 avaliações)" -->
+        <string name="format_phone_label" translatable="false">%1$s: %2$s</string>
 
-
-
-
-    <!-- Bottom bar -->
-    <string name="bottom_home">Início</string>
-    <string name="bottom_search">Explorar</string>
-    <string name="bottom_leaderboard">Top</string>
-    <string name="bottom_history">Histórico</string>
-    <string name="bottom_profile">Perfil</string>
     <string name="cd_bottom_item">Abrir separador: %1$s</string>
 
     <!-- Placeholders / vários -->
     <string name="placeholder_leaderboard">Top locais (Leaderboard)</string>
     <string name="placeholder_history">O meu histórico</string>
     <string name="authgate_preparing">A preparar…</string>
-
+    <string name="history_empty"> O seu histórico está vazio</string>
 
     <!-- Títulos / Ações comuns -->
-    <string name="app_title">BITE</string>
+    <string name="app_title" translatable="false">BITE</string>
     <string name="action_details">Detalhes</string>
     <string name="action_review">Avaliar</string>
     <string name="action_try_again">Tentar novamente</string>
@@ -97,7 +88,7 @@
     <!-- Títulos -->
     <string name="auth_title_register">Criar conta</string>
     <string name="auth_title_login">Entrar</string>
-    <string name="profile_title"> </string>
+    <string name="profile_title" translatable="false"> </string>
 
     <!-- Campos -->
     <string name="field_username_unique">Username (único)</string>
@@ -106,20 +97,18 @@
     <string name="field_confirm_password">Confirmar palavra-passe</string>
 
     <!-- Ações / Botões -->
-    <string name="action_show">Mostrar</string>
-    <string name="action_hide">Ocultar</string>
     <string name="action_create_account">Criar conta</string>
     <string name="action_sign_in">Entrar</string>
     <string name="action_have_account">Já tenho conta</string>
-    <string name="action_logout">Logout</string>
+    <string name="action_logout" translatable="false">Logout</string>
 
     <!-- Estados -->
     <string name="status_registering">A registar...</string>
     <string name="status_signing_in">A entrar...</string>
 
     <!-- Labels -->
-    <string name="label_username">Username:</string>
-    <string name="label_email">Email:</string>
+    <string name="label_username" translatable="false">Username:</string>
+    <string name="label_email" translatable="false">Email:</string>
     <string name="label_error">Erro:</string>
     <string name="placeholder_na">Não disponível</string>
 
@@ -147,15 +136,15 @@
 
 
     <!-- Search (Explorar) -->
-    <string name="search_title"> </string>
+    <string name="search_title" translatable="false"> </string>
     <string name="search_profile_cd">Perfil</string>
     <string name="search_in_this_area">Pesquisar nesta zona</string>
     <!-- Raio de pesquisa -->
     <string name="radius_label">Raio</string>
-    <string name="radius_250m">250 m</string>
-    <string name="radius_1km">1 km</string>
-    <string name="radius_3km">3 km</string>
-    <string name="radius_5km">5 km</string>
+    <string name="radius_250m" translatable="false">250 m</string>
+    <string name="radius_1km" translatable="false">1 km</string>
+    <string name="radius_3km" translatable="false">3 km</string>
+    <string name="radius_5km" translatable="false">5 km</string>
     <!-- Filtro / pesquisa -->
     <string name="action_filter">Filtrar</string>
     <string name="filter_radius_title">Raio de pesquisa</string>
@@ -168,7 +157,7 @@
 
 
     <!-- Leaderboard -->
-    <string name="leaderboard_title"> </string>
+    <string name="leaderboard_title" translatable="false"> </string>
     <string name="leaderboard_tab_establishments">Estabelecimentos</string>
     <string name="leaderboard_tab_pastries">Doçaria</string>
     <string name="leaderboard_empty_establishments">Ainda não há estabelecimentos com avaliações internas.</string>
@@ -195,7 +184,7 @@
     <string name="review_photo">Foto da avaliação</string>
     <string name="review_no_photo">Sem foto</string>
     <!-- Histórico -->
-    <string name="history_title"> </string>
+    <string name="history_title" translatable="false"> </string>
     <string name="history_error_prefix">Erro: %1$s</string>
 
     <!-- Content descriptions / A11y -->
@@ -278,15 +267,23 @@
     <string name="offline_banner_message">Estás offline — a mostrar dados em cache</string>
     <string name="profile_offline_no_cache">Estás offline e não há dados em cache para o perfil.</string>
     <string name="profile_error_generic">Erro.</string>
-    <string name="home_title"> </string>
+    <string name="home_title" translatable="false"> </string>
 
     <string name="app_language_button">Idioma</string>
     <string name="app_language_header">Idioma da aplicação</string>
     <string name="app_language_system">Usar idioma do sistema</string>
 
-    <string name="lang_pt">Português</string>
-    <string name="lang_en">Inglês</string>
-    <string name="lang_es">Espanhol</string>
-    <string name="lang_fr">Francês</string>
+
+    <string name="bottom_home">Início</string>
+    <string name="bottom_search">Explorar</string>
+    <string name="bottom_leaderboard" translatable="false">Top</string>
+    <string name="bottom_history">Histórico</string>
+    <string name="bottom_profile">Perfil</string>
+
+
+    <string name="channel_nearby_name">Estabelecimentos por perto</string>
+    <string name="channel_nearby_desc">Alertas quando estás perto de uma pastelaria com reviews</string>
+    <string name="notif_nearby_title_prefix">Estás perto:</string>
+    <string name="notif_nearby_distance">A menos de 50 m</string>
 
 </resources>

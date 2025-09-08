@@ -6,7 +6,6 @@ import com.google.android.gms.maps.model.LatLng
 
 interface PlaceRepository {
 
-    // 2.5 km por omissão; foco em consumo (bakery/cafe/restaurant/takeaway/delivery)
     suspend fun nearby(
         lat: Double,
         lng: Double,

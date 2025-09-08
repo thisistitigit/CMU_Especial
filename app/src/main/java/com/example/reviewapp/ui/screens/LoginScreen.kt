@@ -1,16 +1,21 @@
-// LoginScreen.kt
 package com.example.reviewapp.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -27,7 +32,7 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onGoRegister: () -> Unit
 ) {
-    var context = LocalContext.current
+    val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
@@ -35,6 +40,7 @@ fun LoginScreen(
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
     fun doLogin() {
+        if (loading) return
         loading = true; errorMsg = null
         vm.login(email, pass) { ok, err ->
             loading = false
@@ -44,53 +50,106 @@ fun LoginScreen(
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(stringResource(R.string.auth_title_login), style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(24.dp))
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { inner ->
+        Box(
+            Modifier
+                .fillMaxSize()
+                .padding(inner)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(24.dp))
+                Image(
+                    painter = painterResource(R.drawable.logo),
+                    contentDescription = null,
+                    modifier = Modifier.size(96.dp)
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = stringResource(R.string.auth_title_login),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-        OutlinedTextField(
-            value = email, onValueChange = { email = it },
-            label = { Text(stringResource(R.string.field_email)) },
-            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
-            modifier = Modifier.fillMaxWidth()
-        )
-        Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(20.dp))
 
-        OutlinedTextField(
-            value = pass, onValueChange = { pass = it },
-            label = { Text(stringResource(R.string.field_password)) },
-            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-            trailingIcon = {
-                TextButton(onClick = { showPass = !showPass }) {
-                    Text(if (showPass) stringResource(R.string.action_hide) else stringResource(R.string.action_show))
+                ElevatedCard(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.elevatedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        contentColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(16.dp)) {
+                        OutlinedTextField(
+                            value = email, onValueChange = { email = it },
+                            label = { Text(stringResource(R.string.field_email)) },
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(12.dp))
+
+                        OutlinedTextField(
+                            value = pass, onValueChange = { pass = it },
+                            label = { Text(stringResource(R.string.field_password)) },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            trailingIcon = {
+                                IconButton(onClick = { showPass = !showPass }) {
+                                    Icon(
+                                        if (showPass) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = null
+                                    )
+                                }
+                            },
+                            singleLine = true,
+                            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                            keyboardActions = KeyboardActions(onDone = { doLogin() }),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (errorMsg != null) {
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                errorMsg!!,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = { doLogin() },
+                            enabled = !loading && email.isNotBlank() && pass.length >= 6,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                if (loading) stringResource(R.string.status_signing_in)
+                                else stringResource(R.string.action_sign_in)
+                            )
+                        }
+                    }
                 }
-            },
-            singleLine = true,
-            visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { if (!loading) doLogin() }),
-            modifier = Modifier.fillMaxWidth()
-        )
 
-        Spacer(Modifier.height(8.dp))
-        errorMsg?.let {
-            Text(it, color = MaterialTheme.colorScheme.error)
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
+                TextButton(onClick = onGoRegister) {
+                    Text(stringResource(R.string.action_create_account))
+                }
+
+                Spacer(Modifier.height(12.dp))
+            }
         }
-
-        Button(
-            onClick = { doLogin() },
-            enabled = !loading && email.isNotBlank() && pass.length >= 6,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(if (loading) stringResource(R.string.status_signing_in) else stringResource(R.string.action_sign_in)) }
-
-        Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onGoRegister) { Text(stringResource(R.string.action_create_account)) }
     }
 }

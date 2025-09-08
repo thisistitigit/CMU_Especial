@@ -1,4 +1,3 @@
-// geofence/LocationUpdateReceiver.kt
 package com.example.reviewapp.geofence
 
 import android.content.BroadcastReceiver

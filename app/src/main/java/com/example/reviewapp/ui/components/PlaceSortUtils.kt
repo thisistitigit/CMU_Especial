@@ -22,10 +22,10 @@ import com.google.android.gms.maps.model.LatLng
 import kotlin.math.*
 
 enum class PlaceSort {
-    DEFAULT,               // igual ao atual (avgRating desc)
-    GOOGLE_RATING,         // avgRating desc
-    DISTANCE_ASC,          // distância asc (mais perto primeiro)
-    GOOGLE_RATING_COUNT    // ratingsCount desc
+    DEFAULT,
+    GOOGLE_RATING,
+    DISTANCE_ASC,
+    GOOGLE_RATING_COUNT
 }
 
 data class PlaceSortState(

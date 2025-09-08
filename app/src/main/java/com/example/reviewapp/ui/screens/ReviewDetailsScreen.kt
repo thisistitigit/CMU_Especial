@@ -51,7 +51,6 @@ fun ReviewDetailScreen(
                     Modifier.padding(padding).padding(16.dp).fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // FOTO GRANDE
                     val photo = ReviewDetails.bestPhoto(r!!)
                     if (photo != null) {
                         AsyncImage(
@@ -66,7 +65,6 @@ fun ReviewDetailScreen(
                         Text(stringResource(R.string.review_no_photo))
                     }
 
-                    // Metadados
                     Text(r.userName, style = MaterialTheme.typography.titleMedium)
                     Text(ReviewDetails.relativeDate(LocalContext.current, r.createdAt))
                     Text(stringResource(R.string.field_pastry) + ": " + r.pastryName)

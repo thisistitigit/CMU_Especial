@@ -1,76 +1,321 @@
 package com.example.reviewapp.ui.screens
 
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.reviewapp.R
+import com.example.reviewapp.ui.components.AppHeader
+import com.example.reviewapp.ui.components.OfflineBanner
+import com.example.reviewapp.ui.components.RatingRow
 import com.example.reviewapp.ui.components.ReviewCard
-import com.example.reviewapp.ui.components.StarRating
+import com.example.reviewapp.ui.components.ReviewFilterState
+import com.example.reviewapp.ui.components.ReviewFiltersMinimal
+import com.example.reviewapp.ui.components.ReviewSort
+import com.example.reviewapp.ui.components.applyReviewFilters
+import com.example.reviewapp.viewmodels.AuthViewModel
 import com.example.reviewapp.viewmodels.DetailsViewModel
 
+/**
+ * Ecrã de **detalhe de estabelecimento**, incluindo:
+ * - Metadados (categoria, morada, contacto, coordenadas),
+ * - Métricas Google (rating/contagem),
+ * - Métricas internas (média/contagem calculadas a partir das reviews locais),
+ * - Top 10 reviews (após filtros) e *call-to-action* para criar review.
+ *
+ * ### Notas de UX/A11Y
+ * - `ExtendedFloatingActionButton` fornece affordance clara para adicionar review.
+ * - Ícones têm `contentDescription` quando relevante para *screen readers*.
+ *
+ * ### Fluxo de dados
+ * - `DetailsViewModel.load(placeId)` combina Room + streams Firestore.
+ * - Filtros reativos via `ReviewFiltersMinimal`.
+ *
+ * @param placeId ID do local.
+ * @param vm ViewModel do detalhe.
+ * @param authVm ViewModel para UID atual (filtros “só as minhas”).
+ * @param onBack Navegar atrás.
+ * @param onReview Ação para abrir o formulário de review; recebe `placeId` e a lat/lng do local.
+ * @param onOpenReviewDetails Abrir detalhe de uma review individual.
+ * @param onOpenAllReviews Abrir ecrã com a lista completa de reviews do local.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
     placeId: String,
     vm: DetailsViewModel = hiltViewModel(),
+    authVm: AuthViewModel = hiltViewModel(),
     onBack: () -> Unit = {},
-    onReview: (String) -> Unit = {}
+    onReview: (String, Double?, Double?) -> Unit = { _,_,_ -> },
+    onOpenReviewDetails: (String) -> Unit = {},
+    onOpenAllReviews: (String) -> Unit = {}
 ) {
     val state by vm.state.collectAsState()
+    val uid by authVm.currentUserId.collectAsState()
 
     LaunchedEffect(placeId) { vm.load(placeId) }
 
-    state.place?.let { place ->
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(place.name) },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar")
-                        }
-                    }
-                )
-            },
-            floatingActionButton = {
-                ExtendedFloatingActionButton(onClick = { onReview(place.id) }) {
-                    Text("Avaliar")
+    var filters by remember { mutableStateOf(ReviewFilterState(sort = ReviewSort.OLDEST_FIRST)) }
+
+    val filteredAll = remember(state.latestReviews, filters, uid) {
+        applyReviewFilters(
+            all = state.latestReviews,
+            f = filters,
+            currentUserId = uid
+        )
+    }
+    val filteredTop10 = remember(filteredAll) { filteredAll.take(10) }
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            AppHeader(
+                title = state.place?.name ?: stringResource(R.string.details_title),
+                onBack = onBack
+            )
+        },
+        floatingActionButton = {
+            state.place?.let { place ->
+                ExtendedFloatingActionButton(
+                    onClick = { onReview(place.id, place.lat, place.lng) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Text(stringResource(R.string.details_review_cta))
                 }
             }
-        ) { padding ->
-            LazyColumn(Modifier.padding(padding)) {
-                item {
-                    Text(
-                        place.address.orEmpty(),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                    place.phone?.let { phone ->
-                        TextButton(onClick = { vm.call(phone) }) { Text("Telefonar: $phone") }
+        }
+    ) { padding ->
+
+        when {
+            state.isLoading -> Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+
+            state.error != null -> Box(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) { Text(text = stringResource(R.string.state_error), color = MaterialTheme.colorScheme.error) }
+
+            else -> {
+                state.place?.let { place ->
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(padding)
+                            .fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // HERO / INFO
+                        item {
+                            ElevatedCard(
+                                shape = RoundedCornerShape(20.dp),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp),
+                                colors = CardDefaults.elevatedCardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    contentColor   = MaterialTheme.colorScheme.onSurface
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+                                    OfflineBanner()
+
+                                    place.category?.takeIf { it.isNotBlank() }?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    place.address?.takeIf { it.isNotBlank() }?.let {
+                                        Spacer(Modifier.height(6.dp))
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Spacer(Modifier.height(10.dp))
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        if (place.phone.isNullOrBlank()) {
+                                            Text(
+                                                text = stringResource(R.string.place_phone_none),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        } else {
+                                            FilledTonalButton(
+                                                onClick = { vm.call(place.phone) },
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Icon(Icons.Filled.Phone, contentDescription = null)
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(
+                                                    stringResource(
+                                                        R.string.place_call_action_with_number,
+                                                        place.phone
+                                                    )
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                    Spacer(Modifier.height(10.dp))
+                                    AssistChip(
+                                        onClick = {},
+                                        label = {
+                                            Text(
+                                                stringResource(R.string.place_lat_lng, place.lat, place.lng),
+                                                style = MaterialTheme.typography.labelMedium
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Filled.Place,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        },
+                                        shape = RoundedCornerShape(16.dp)
+                                    )
+                                    Spacer(Modifier.height(12.dp))
+                                }
+                            }
+                        }
+
+                        // RATINGS
+                        item {
+                            ElevatedCard(
+                                shape = RoundedCornerShape(20.dp),
+                                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                                colors = CardDefaults.elevatedCardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface,
+                                    contentColor   = MaterialTheme.colorScheme.onSurface
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(Modifier.padding(16.dp)) {
+
+                                    Text(
+                                        text = stringResource(R.string.ratings_google_title),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    if (place.ratingsCount > 0) {
+                                        RatingRow(
+                                            rating = place.avgRating,
+                                            count  = place.ratingsCount
+                                        )
+                                    } else {
+                                        Text(
+                                            text = stringResource(R.string.ratings_not_available),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    HorizontalDivider(
+                                        modifier = Modifier
+                                            .padding(vertical = 12.dp),
+                                        thickness = DividerDefaults.Thickness,
+                                        color = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+
+                                    Text(
+                                        text = stringResource(R.string.ratings_internal_title),
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Spacer(Modifier.height(6.dp))
+                                    if (state.internalCount > 0) {
+                                        RatingRow(
+                                            rating = state.internalAvg,
+                                            count  = state.internalCount
+                                        )
+                                    } else {
+                                        Text(
+                                            text = stringResource(R.string.ratings_not_available),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Header Reviews
+                        item {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.reviews_section_title_top10),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                if (state.internalCount > state.latestReviews.size) {
+                                    TextButton(onClick = { onOpenAllReviews(place.id) }) {
+                                        Text(stringResource(R.string.reviews_view_all))
+                                    }
+                                }
+                            }
+                        }
+
+                        // Filtros + Contagem
+                        item {
+                            ReviewFiltersMinimal(
+                                state = filters,
+                                onChange = { filters = it },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = stringResource(R.string.reviews_count_filtered, filteredAll.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+
+                        // Lista de Reviews
+                        if (filteredAll.isEmpty()) {
+                            item {
+                                Text(
+                                    text = stringResource(R.string.reviews_empty),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        } else {
+                            items(filteredTop10, key = { it.id }) { r ->
+                                ReviewCard(
+                                    review = r,
+                                    onClick = { onOpenReviewDetails(r.id) }
+                                )
+                                Spacer(Modifier.height(8.dp))
+                            }
+                        }
                     }
-                    StarRating(rating = place.avgRating)
-                    Divider()
-                }
-                items(state.latestReviews) { r ->
-                    ReviewCard(review = r)
-                    Divider()
                 }
             }
         }

@@ -1,25 +1,35 @@
 package com.example.reviewapp.viewmodels
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.reviewapp.data.models.Review
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.utils.ReviewRules
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.MutableSharedFlow
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * **VM** do formulário de submissão de reviews.
+ *
+ * Aplica regras anti-abuso ([ReviewRules]):
+ * - distância ≤ `MIN_DISTANCE_METERS`;
+ * - intervalo desde a última review ≥ `MIN_INTERVAL_MINUTES`.
+ *
+ * Gere permissões/estado de localização (sinalizados pela UI) e *validates*
+ * campos obrigatórios (`pastryName`, `stars ∈ [1..5]`, `comment`).
+ */
 @HiltViewModel
 class ReviewFormViewModel @Inject constructor(
-    private val reviewRepo: ReviewRepository,
-    @ApplicationContext private val appContext: Context
+    private val reviewRepo: ReviewRepository
 ) : ViewModel() {
 
+    /** Estado do formulário e do *gate* de regras/UX. */
     data class UiState(
         val placeId: String = "",
         val userId: String = "",
@@ -29,109 +39,132 @@ class ReviewFormViewModel @Inject constructor(
         val comment: String = "",
         val photoLocalPath: String? = null,
         val photoCloudUrl: String? = null,
+
+        val userLat: Double? = null,
+        val userLng: Double? = null,
         val distanceMeters: Double? = null,
         val lastReviewAt: Long? = null,
         val rulesOk: Boolean = false,
+        val ruleMessage: String? = null,
+
         val canSubmit: Boolean = false,
-        val isSubmitting: Boolean = false
+        val isSubmitting: Boolean = false,
+        val isLocLoading: Boolean = false,
+        val hasLocationPermission: Boolean = false,
+        val isLocationEnabled: Boolean = true,
     )
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
-    /* -------- setters básicos usados pelo ecrã -------- */
-
+    /** Inicializa identificadores do contexto da review. */
     fun init(placeId: String, userId: String, userName: String) {
         _state.update { it.copy(placeId = placeId, userId = userId, userName = userName) }
         recompute()
     }
 
-    fun onPastryChanged(value: String) {
-        _state.update { it.copy(pastryName = value) }
+    /** Eventos one-shot da UI (ex.: navegação após sucesso). */
+    sealed interface Event { data object Submitted : Event }
+    private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 1)
+    val events = _events.asSharedFlow()
+
+    // Setters reativos de campos
+    fun onPastryChanged(value: String) { _state.update { it.copy(pastryName = value) }; recompute() }
+    fun onStarsChanged(value: Int) { _state.update { it.copy(stars = value.coerceIn(0, 5)) }; recompute() }
+    fun onCommentChanged(value: String) { _state.update { it.copy(comment = value) }; recompute() }
+
+    fun setUserLocation(lat: Double?, lng: Double?) { _state.update { it.copy(userLat = lat, userLng = lng) }; recompute() }
+    fun setDistanceMeters(value: Double?) { _state.update { it.copy(distanceMeters = value) }; recompute() }
+
+    /**
+     * Pré-carrega a última review do utilizador para validar `too_soon`.
+     */
+    fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
+        val uid = _state.value.userId
+        val last = if (uid.isNotBlank()) reviewRepo.lastReviewAtByUser(uid) else null
+        _state.update { it.copy(distanceMeters = distanceMeters, lastReviewAt = last) }
         recompute()
     }
 
-    fun onStarsChanged(value: Int) {
-        _state.update { it.copy(stars = value.coerceIn(0, 5)) }
-        recompute()
-    }
+    fun setPhotoLocalPath(path: String?) { _state.update { it.copy(photoLocalPath = path) } }
+    fun setLocLoading(loading: Boolean) { _state.update { it.copy(isLocLoading = loading) }; recompute() }
+    fun setLocationPermission(has: Boolean) { _state.update { it.copy(hasLocationPermission = has) }; recompute() }
+    fun setLocationEnabled(enabled: Boolean) { _state.update { it.copy(isLocationEnabled = enabled) }; recompute() }
 
-    fun onCommentChanged(value: String) {
-        _state.update { it.copy(comment = value) }
-        recompute()
-    }
-
-    fun setDistanceMeters(value: Double?) {
-        _state.update { it.copy(distanceMeters = value) }
-        recompute()
-    }
-
-    fun setLastReviewAt(value: Long?) {
-        _state.update { it.copy(lastReviewAt = value) }
-        recompute()
-    }
-
-    /* -------- ações (no-ops seguros para já) -------- */
-
-    fun capturePhoto() {
-        // Normalmente isto dispara um evento para a UI abrir CameraX.
-        // Mantemos no-op para não rebentar compilação.
-    }
-
-    fun pickPhoto() {
-        // Normalmente isto dispara um picker na UI.
-    }
-
-    fun setPhotoLocalPath(path: String?) {
-        _state.update { it.copy(photoLocalPath = path) }
-    }
-
-    fun submit() = viewModelScope.launch {
+    /**
+     * Submete a review se regras e campos obrigatórios estiverem OK.
+     *
+     * @return `true` em sucesso; em falha, popula `ruleMessage` com chave de i18n.
+     */
+    suspend fun submit(): Boolean {
         val s = _state.value
-        if (!s.rulesOk || !s.canSubmit) return@launch
+        val uid = s.userId
+        val lat = s.userLat
+        val lng = s.userLng
+        val now = System.currentTimeMillis()
 
-        _state.update { it.copy(isSubmitting = true) }
+        if (uid.isBlank()) { _state.update { it.copy(ruleMessage = "error_not_authenticated") }; return false }
+        if (lat == null || lng == null) { _state.update { it.copy(ruleMessage = "error_enable_location") }; return false }
+        if (!s.canSubmit) { _state.update { it.copy(ruleMessage = "error_fill_fields") }; return false }
+        if (!s.rulesOk) return false
+
+        _state.update { it.copy(isSubmitting = true, ruleMessage = null) }
 
         val review = Review(
+            id = java.util.UUID.randomUUID().toString(),
             placeId = s.placeId,
-            userId = s.userId,
+            userId = uid,
             userName = s.userName,
             pastryName = s.pastryName,
             stars = s.stars,
             comment = s.comment,
             photoLocalPath = s.photoLocalPath,
             photoCloudUrl = s.photoCloudUrl,
-            createdAt = System.currentTimeMillis(),
-            id = java.util.UUID.randomUUID().toString()
+            createdAt = now
         )
 
-        reviewRepo.addReview(review)
-
-        _state.update {
-            it.copy(
-                pastryName = "",
-                stars = 0,
-                comment = "",
-                photoLocalPath = null,
-                photoCloudUrl = null,
-                isSubmitting = false
-            )
+        return try {
+            reviewRepo.addReview(review, userLat = lat, userLng = lng, now = now)
+            _events.tryEmit(Event.Submitted)
+            _state.update {
+                it.copy(
+                    pastryName = "", stars = 0, comment = "",
+                    photoLocalPath = null, photoCloudUrl = null,
+                    isSubmitting = false, ruleMessage = null
+                )
+            }
+            recompute()
+            true
+        } catch (e: Exception) {
+            val msgKey = when (e.message) {
+                "TOO_FAR" -> "error_too_far"
+                "TOO_SOON" -> "error_too_soon"
+                else -> "error_submit_generic"
+            }
+            _state.update { it.copy(isSubmitting = false, ruleMessage = msgKey, rulesOk = false) }
+            false
         }
-        recompute()
     }
 
-    /* -------- lógica de regras e validação -------- */
-
+    /** Recalcula `rulesOk`, `canSubmit` e `ruleMessage` para a UI. */
     private fun recompute() {
         val s = _state.value
         val now = System.currentTimeMillis()
         val dist = s.distanceMeters
-        val rulesOk = if (dist == null) {
-            false
-        } else {
-            ReviewRules.canReview(dist, s.lastReviewAt, now)
+
+        val (ok, messageKey) = when {
+            !s.hasLocationPermission -> false to "hint_grant_location_permission"
+            !s.isLocationEnabled -> false to "hint_enable_gps"
+            s.isLocLoading -> false to "hint_fetching_location"
+            dist == null -> false to "hint_fetching_location"
+            dist > ReviewRules.MIN_DISTANCE_METERS ->
+                false to "error_too_far_live"
+            (s.lastReviewAt != null) && (now - s.lastReviewAt < ReviewRules.MIN_INTERVAL_MINUTES * 60_000) ->
+                false to "error_too_soon_live"
+            else -> true to null
         }
+
         val canSubmit = s.pastryName.isNotBlank() && s.stars in 1..5 && s.comment.isNotBlank()
-        _state.update { it.copy(rulesOk = rulesOk, canSubmit = canSubmit) }
+        _state.update { it.copy(rulesOk = ok, canSubmit = canSubmit, ruleMessage = messageKey) }
     }
 }

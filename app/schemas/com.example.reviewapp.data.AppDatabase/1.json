@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "5d711983205b46ceb8d209e3c1c19e9e",
+    "identityHash": "063c0a038ea4ac490a80c922c2185763",
     "entities": [
       {
         "tableName": "places",
@@ -74,7 +74,7 @@
       },
       {
         "tableName": "reviews",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `placeId` TEXT NOT NULL, `userId` TEXT NOT NULL, `userName` TEXT NOT NULL, `pastryName` TEXT NOT NULL, `stars` INTEGER NOT NULL, `comment` TEXT NOT NULL, `photoLocalPath` TEXT, `photoCloudUrl` TEXT, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `placeId` TEXT NOT NULL, `placeName` TEXT, `placeAddress` TEXT, `userId` TEXT NOT NULL, `userName` TEXT NOT NULL, `pastryName` TEXT NOT NULL, `stars` INTEGER NOT NULL, `comment` TEXT NOT NULL, `photoLocalPath` TEXT, `photoCloudUrl` TEXT, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -87,6 +87,18 @@
             "columnName": "placeId",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "placeName",
+            "columnName": "placeName",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "placeAddress",
+            "columnName": "placeAddress",
+            "affinity": "TEXT",
+            "notNull": false
           },
           {
             "fieldPath": "userId",
@@ -169,7 +181,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5d711983205b46ceb8d209e3c1c19e9e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '063c0a038ea4ac490a80c922c2185763')"
     ]
   }
 }

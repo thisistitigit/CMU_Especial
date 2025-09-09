@@ -4,13 +4,14 @@ import android.content.Context
 import androidx.room.Room
 import com.example.reviewapp.R
 import com.example.reviewapp.data.AppDatabase
+import com.example.reviewapp.data.MIGRATION_1_2
 import com.example.reviewapp.data.dao.PlaceDao
 import com.example.reviewapp.data.dao.ReviewDao
 import com.example.reviewapp.data.repository.PlaceRepository
 import com.example.reviewapp.data.repository.PlaceRepositoryImpl
 import com.example.reviewapp.data.repository.ReviewRepository
 import com.example.reviewapp.data.repository.ReviewRepositoryImpl
-import com.example.reviewapp.network.api.GeopifyApi
+import com.example.reviewapp.network.api.GooglePlacesApi
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -22,46 +23,59 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Named
 import javax.inject.Singleton
 
+/**
+ * Módulo Hilt com _singletons_ de infraestrutura, DAOs e repositórios.
+ *
+ * @since 1.0
+ */
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // -------- Room --------
+    /** Base de dados Room (inclui migração 1→2). */
     @Provides @Singleton
     fun provideDb(@ApplicationContext ctx: Context): AppDatabase =
-        Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db").build()
+        Room.databaseBuilder(ctx, AppDatabase::class.java, "reviews.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
 
     @Provides fun providePlaceDao(db: AppDatabase): PlaceDao = db.placeDao()
     @Provides fun provideReviewDao(db: AppDatabase): ReviewDao = db.reviewDao()
 
-    // -------- Firebase --------
     @Provides @Singleton fun provideFirebaseAuth(): FirebaseAuth = FirebaseAuth.getInstance()
     @Provides @Singleton fun provideFirestore(): FirebaseFirestore = FirebaseFirestore.getInstance()
     @Provides @Singleton fun provideStorage(): FirebaseStorage = FirebaseStorage.getInstance()
 
-    // ❌ REMOVIDO: provider de FusedLocationProviderClient (fica no LocationModule)
-
-    // -------- Chaves (sem BuildConfig) --------
+    /** Lê a chave da Google Places API de `strings.xml`. */
     @Provides @Singleton
-    @Named("GEO_API_KEY")
-    fun provideGeoApiKey(@ApplicationContext ctx: Context): String =
-        ctx.getString(R.string.geo_api_key)
+    @Named("GOOGLE_PLACES_KEY")
+    fun provideGooglePlacesKey(@ApplicationContext ctx: Context): String =
+        ctx.getString(R.string.google_places_key)
 
-    // -------- Repositórios --------
+    /** Repositório de locais. */
     @Provides @Singleton
     fun providePlaceRepository(
         placeDao: PlaceDao,
-        api: GeopifyApi,
-        @Named("GEO_API_KEY") geoKey: String,
+        api: GooglePlacesApi,
+        @Named("GOOGLE_PLACES_KEY") googleKey: String,
         firestore: FirebaseFirestore
-    ): PlaceRepository = PlaceRepositoryImpl(placeDao, api, geoKey, firestore)
+    ): PlaceRepository = PlaceRepositoryImpl(placeDao, api, googleKey, firestore)
 
+    /** Repositório de reviews. */
     @Provides @Singleton
     fun provideReviewRepository(
         reviewDao: ReviewDao,
         placeDao: PlaceDao,
-        firestore: FirebaseFirestore,
-        storage: FirebaseStorage
-    ): ReviewRepository =
-        ReviewRepositoryImpl(reviewDao, placeDao, firestore, storage)
+        firestore: FirebaseFirestore?,
+        storage: FirebaseStorage?,
+        auth: FirebaseAuth,
+        @ApplicationContext context: Context
+    ): ReviewRepository = ReviewRepositoryImpl(
+        reviewDao = reviewDao,
+        placeDao = placeDao,
+        firestore = firestore,
+        storage = storage,
+        auth = auth,
+        appContext = context
+    )
 }

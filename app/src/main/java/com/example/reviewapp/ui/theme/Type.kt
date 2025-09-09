@@ -6,6 +6,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+/**
+ * ## Sistema tipográfico
+ *
+ * Conjunto base de estilos Material 3 com ajustes mínimos para hierarquia e legibilidade:
+ * - `titleLarge`: realce de cabeçalhos da aplicação (ex.: _TopAppBar_).
+ * - `bodyLarge`: corpo de texto predominante.
+ * - `labelSmall`: metadados/auxiliares (chips, _assist_ labels).
+ *
+ * Os restantes estilos herdados de [Typography] mantêm-se por omissão (Material defaults).
+ */
 val Typography = Typography(
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,

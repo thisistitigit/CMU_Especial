@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Tema claro -->
-    <style name="Theme.ReviewApp" parent="Theme.Material3.Light" />
+    <style name="Theme.ReviewApp" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+
+    <!-- Tema de Splash para < Android 12 -->
+    <style name="Theme.ReviewApp.Splash" parent="Theme.SplashScreen">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
+
 </resources>

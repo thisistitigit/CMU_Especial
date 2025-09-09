@@ -1,10 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.google.gms)
     alias(libs.plugins.hilt.android)
 }
+
 
 android {
     namespace = "com.example.reviewapp"
@@ -17,7 +18,6 @@ android {
         versionCode = 1
         versionName = "1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables.useSupportLibrary = true
 
         javaCompileOptions {
             annotationProcessorOptions {
@@ -41,104 +41,91 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
     buildFeatures {
+        buildConfig = true
         compose = true
     }
-
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
-
     packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
 }
 
 dependencies {
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.hilt.common)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+
     // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation(libs.googleid)
     coreLibraryDesugaring(libs.core.desugar)
 
     // Compose
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material.icons.extended)
+
+    implementation(libs.androidx.navigation.runtime.ktx)
 
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
-    // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.database)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.storage.ktx)
 
-    // Google Services
     implementation(libs.play.services.location)
     implementation(libs.play.services.maps)
     implementation(libs.places)
+    implementation(libs.play.services.auth)
 
-    // Networking
+    implementation(libs.androidx.media3.common)
+
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp.logging)
     implementation(libs.moshi.core)
     implementation(libs.moshi.kotlin)
-    implementation(libs.okhttp.logging)
+    kapt(libs.moshi.kotlin.codegen)
 
-    // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // WorkManager
-    implementation("androidx.work:work-runtime-ktx:2.8.1")
-
-    // Coil
-    implementation("io.coil-kt:coil-compose:2.4.0")
-
-    // CameraX
-    implementation("androidx.camera:camera-core:1.3.0")
-    implementation("androidx.camera:camera-camera2:1.3.0")
-    implementation("androidx.camera:camera-lifecycle:1.3.0")
-    implementation("androidx.camera:camera-view:1.3.0")
-    implementation("com.google.android.material:material:1.12.0")
-
-    // Maps Compose
-    implementation("com.google.maps.android:maps-compose:4.1.1")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.coil.compose)
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+    implementation(libs.material)
+    implementation(libs.maps.compose)
+    implementation(libs.retrofit.gson)
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("androidx.core:core-splashscreen:1.0.0")
 
 
-    implementation("com.google.android.gms:play-services-auth:21.2.0")
-
-
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    debugImplementation("com.google.firebase:firebase-appcheck-debug")
+
 }
 
-kapt {
-    correctErrorTypes = true
-}

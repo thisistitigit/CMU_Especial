@@ -1,104 +1,135 @@
 [versions]
 agp = "8.6.1"
 kotlin = "1.9.22"
+composeCompiler = "1.5.8"
+
 coreKtx = "1.12.0"
+lifecycleRuntimeKtx = "2.6.2"
+appcompat = "1.7.1"
+
+composeBom = "2024.04.01"
+activityCompose = "1.8.0"
+material3 = "1.1.2"
+navigationCompose = "2.7.4"
+navigationRuntimeKtx = "2.7.4"
+
+room = "2.6.0"
+desugarJdk = "2.0.4"
+
+retrofit = "2.9.0"
+okhttp = "4.12.0"
+moshi = "1.15.1"
+
+# Firebase – usar só BOM para gerir versões
+firebaseBom = "33.1.2"
+
+# Google / Play Services
+playServicesMaps = "18.2.0"
+playServicesLocation = "21.0.1"
+places = "3.3.0"
+googlePlayAuth = "21.2.0"
+
+# Outros
+media3 = "1.2.0"                       # artefacto correto é 'media3-common'
+work = "2.8.1"
+coil = "2.4.0"
+cameraX = "1.3.0"
+material = "1.12.0"
+mapsCompose = "4.1.1"
+
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
-lifecycleRuntimeKtx = "2.6.2"
-activityCompose = "1.8.0"
-composeBom = "2023.10.01"
-roomVersion = "2.6.0"
-transportRuntime = "3.2.0"
-firebaseBom = "32.6.0"
-firebaseAuth = "22.3.0"
+
+hilt = "2.48.1"
+hiltComposeNavigation = "1.1.0"
 credentials = "1.2.0"
 credentialsPlayServicesAuth = "1.2.0"
 googleid = "1.1.0"
-firebaseDatabase = "20.3.0"
-navigationRuntimeKtx = "2.7.4"
-playServicesMaps = "18.2.0"
-playServicesLocation = "21.0.1"
-navigationCompose = "2.7.4"
-material3 = "1.1.2"
-firebaseFirestoreKtx = "24.9.1"
-retrofit = "2.9.0"
-okhttp = "4.12.0"
-moshi = "1.15.0"
-firebaseStorageKtx = "20.3.0"
-places = "3.3.0"
-desugarJdk = "2.0.4"
-media3CommonKtx = "1.2.0"
-hiltVersion = "2.48.1"
-hiltComposeNavigation = "1.1.0"
-appcompat = "1.7.1"
-
-[libraries]
-# Core
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
-core-desugar = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdk" }
-
-# Compose
-androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
-androidx-ui = { group = "androidx.compose.ui", name = "ui" }
-androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
-androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
-androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
-androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
-androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
-androidx-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
-androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
-
-# Room
-androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomVersion" }
-androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomVersion" }
-androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomVersion" }
-
-# Firebase
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
-firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
-firebase-database = { group = "com.google.firebase", name = "firebase-database", version.ref = "firebaseDatabase" }
-firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
-firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
-
-# Google Services
-transport-runtime = { group = "com.google.android.datatransport", name = "transport-runtime", version.ref = "transportRuntime" }
-androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
-androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
-googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
-play-services-maps = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
-places = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
-
-# Networking
-retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
-retrofit-moshi = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
-okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
-moshi-core = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
-moshi-kotlin = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
-
-# Media
-androidx-media3-common-ktx = { group = "androidx.media3", name = "media3-common-ktx", version.ref = "media3CommonKtx" }
-
-# Navigation
-androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
-
-# Testing
-junit = { group = "junit", name = "junit", version.ref = "junit" }
-androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
-androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
-
-# Hilt
-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hiltVersion" }
-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hiltVersion" }
-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltComposeNavigation" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+hiltCommon = "1.2.0"
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-google-gms-google-services = { id = "com.google.gms.google-services", version = "4.4.0" }
-kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
-hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hiltVersion" }
+kotlin-android      = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-kapt         = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
+google-gms          = { id = "com.google.gms.google-services", version = "4.4.0" }
+hilt-android        = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+
+[libraries]
+# Core
+androidx-core-ktx                 = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx    = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-appcompat                = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+core-desugar                      = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "desugarJdk" }
+
+# Compose
+androidx-compose-bom              = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-activity-compose         = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-ui                       = { group = "androidx.compose.ui", name = "ui" }                       # versão via BoM
+androidx-ui-graphics              = { group = "androidx.compose.ui", name = "ui-graphics" }             # via BoM
+androidx-ui-tooling               = { group = "androidx.compose.ui", name = "ui-tooling" }              # via BoM
+androidx-ui-tooling-preview       = { group = "androidx.compose.ui", name = "ui-tooling-preview" }      # via BoM
+androidx-ui-test-junit4           = { group = "androidx.compose.ui", name = "ui-test-junit4" }          # via BoM
+androidx-ui-test-manifest         = { group = "androidx.compose.ui", name = "ui-test-manifest" }        # via BoM
+androidx-material3                = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
+androidx-navigation-compose       = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+androidx-material-icons-extended  = { group = "androidx.compose.material", name = "material-icons-extended" } # via BoM
+
+# Navigation runtime
+androidx-navigation-runtime-ktx   = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
+
+# Room
+androidx-room-runtime             = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx                 = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler            = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Firebase (sem versões aqui – geridas pelo BOM)
+firebase-bom                      = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-auth                     = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-database                 = { group = "com.google.firebase", name = "firebase-database" }
+firebase-firestore-ktx            = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+firebase-storage-ktx              = { group = "com.google.firebase", name = "firebase-storage-ktx" }
+
+# Google / Play Services
+play-services-maps                = { group = "com.google.android.gms", name = "play-services-maps", version.ref = "playServicesMaps" }
+play-services-location            = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
+play-services-auth                = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "googlePlayAuth" }
+places                            = { group = "com.google.android.libraries.places", name = "places", version.ref = "places" }
+
+# Media3 – artefacto correto (sem -ktx)
+androidx-media3-common            = { group = "androidx.media3", name = "media3-common", version.ref = "media3" }
+
+# Networking
+retrofit-core                     = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-moshi                   = { group = "com.squareup.retrofit2", name = "converter-moshi", version.ref = "retrofit" }
+okhttp-logging                   = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+moshi-core                       = { group = "com.squareup.moshi", name = "moshi", version.ref = "moshi" }
+moshi-kotlin                     = { group = "com.squareup.moshi", name = "moshi-kotlin", version.ref = "moshi" }
+moshi-kotlin-codegen             = { group = "com.squareup.moshi", name = "moshi-kotlin-codegen", version.ref = "moshi" }
+retrofit-gson                    = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+
+# Outros libs que usas no app
+androidx-work-runtime-ktx         = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+coil-compose                      = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+camerax-core                      = { group = "androidx.camera", name = "camera-core", version.ref = "cameraX" }
+camerax-camera2                   = { group = "androidx.camera", name = "camera-camera2", version.ref = "cameraX" }
+camerax-lifecycle                 = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraX" }
+camerax-view                      = { group = "androidx.camera", name = "camera-view", version.ref = "cameraX" }
+material                          = { group = "com.google.android.material", name = "material", version.ref = "material" }
+maps-compose                      = { group = "com.google.maps.android", name = "maps-compose", version.ref = "mapsCompose" }
+
+# Credenciais / Identity
+androidx-credentials              = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+googleid                          = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+
+# Hilt
+hilt-android                      = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler                     = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose           = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hiltComposeNavigation" }
+
+# Test
+junit                             = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit                    = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core            = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }

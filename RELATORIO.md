@@ -23,10 +23,11 @@ A aplicação — **ReviewApp** — centra-se em **cafés e pastelarias**, permi
    * intervalo: **≥ 30 min** entre avaliações do mesmo utilizador;
    * campos: “Doçaria”, “Rating (1–5)”, “Comentário”; **foto opcional** (câmara/galeria).
 4. **Leaderboard** – rankings de **estabelecimentos** e de **doçarias**, agregados a partir das reviews internas, com enriquecimento de nomes/moradas via repositório de locais.
-5. **Histórico do utilizador** – lista cronológica das reviews do próprio (com miniatura, rating, data).
+5. **Histórico do utilizador** – lista cronológica das reviews do próprio (com miniatura, rating, data e fotografia caso tenha tido).
 6. **Consulta de reviews** – ecrãs para listar e filtrar reviews (ordenação, “apenas com foto”, “apenas minhas”, mínimo de estrelas).
 7. **Notificações geolocalizadas (Geofence)** – ao **entrar ou permanecer** numa área de **raio 50 m** de um local, é enviada notificação **apenas entre as 16h e as 18h** (janela temporal aplicada em runtime).
-8. **Detalhes do estabelecimento** – mostra categoria/morada, **ratings Google** e **média interna**, ações de chamada e coordenadas (componente de mapa disponível no ecrã de Pesquisa).
+8. **Detalhes do estabelecimento** – mostra categoria/morada, **ratings Google** e **média interna**, assim como o **Ultimas 10 reviews** como a opção de **ver todas** caso hajam mais de 10. 
+Ações de chamada e coordenadas (componente de mapa disponível no ecrã de Pesquisa).**NOTA** Username nas reviews disponibilizadas não aparece pois foram usados users sem username, devido a terem sido criados em fase embrionária.
 9. **Experiência offline** – **Room** como cache local e **banner de offline** reativo (mostrar estado de conectividade).
 
 A aplicação foi concebida para uma **experiência fluida, resiliente a falhas de rede e energeticamente consciente**, respeitando boas práticas da plataforma.
@@ -131,7 +132,8 @@ Mapa interativo na **Pesquisa**, com *markers* e “Pesquisar aqui”. **Geocode
 * A precisão/latência de localização varia por dispositivo e condições (GPS/Network), impactando geofence e cálculos de distância.
 * Em modo de **poupança de energia**/restrições de background, o sistema pode adiar geofences e *workers*.
 * O *tile* de notificação é informativo; ações “deep link” podem ser adicionadas como melhoria.
-* Dependência de **Google Places**: sujeita a limites de quota e à presença de **API key**.
+* Dependência de **Google Places**: sujeita a limites de quota e à presença de **API key**. 
+* Ultrapassagem do limite de chamadas causou um pequeno imprevisto que afetou o firebase e o acesso às fotografias, pelo que pode estar condicionado o seu acesso atual.
 
 # 5. Conclusão
 
@@ -151,6 +153,8 @@ O projeto permitiu consolidar práticas modernas de **desenvolvimento Android**:
 * Código modular e documentado (KDoc/Dokka).
 * Experiência consistente **online/offline**.
 * Notificações contextuais com branding e restrição temporal.
+* Multi-língua
+* UI consistente e de fácil aprendizagem.
 
 # 6. Documentação
 

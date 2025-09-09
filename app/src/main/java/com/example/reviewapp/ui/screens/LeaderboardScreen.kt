@@ -28,7 +28,26 @@ import com.example.reviewapp.ui.components.RatingRow
 import com.example.reviewapp.viewmodels.LeaderboardViewModel
 
 private const val TAG_CLICK = "LeaderboardClick"
-
+ /**
+  * **Ecrã de Leaderboard (Top estabelecimentos e doçarias)**.
+  *Mostra duas tabs (Estabelecimentos/Pastelaria) alimentadas pelo LeaderboardViewModel.
+  *Atualiza reativamente via StateFlow, apresenta um indicador de progresso no AppBar
+  * *e permite pull-to-refresh via botão de recarregar.
+  * ### Estrutura:
+  *     - TopAppBar com ação de refresh/loader.
+  *     - OfflineBanner para estado de conectividade.
+  *     - SegmentedButtonRow para alternar Tab.
+  *     - Lista paginada com cartões de classificação, ordenados por média e contagem.
+  * ### Interações:
+  *     - Tocar num estabelecimento emite onPlaceClick(placeId).
+  *     - Tocar no botão de refresh invoca viewModel.refresh().
+  * ### Acessibilidade:
+  *     - Ícones com contentDescription quando aplicável.
+  *     - Hierarquia tipográfica conforme Material 3.
+  *
+  * @param viewModel LeaderboardViewModel injetado via Hilt.
+  * @param onPlaceClick callback quando o utilizador seleciona um estabelecimento (navegação para detalhes).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LeaderboardScreen(

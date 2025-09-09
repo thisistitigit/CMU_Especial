@@ -25,7 +25,29 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.AuthViewModel
-
+/**
+ *
+ * **Ecrã de Início de Sessão.**
+ *
+ * Autentica um utilizador via AuthViewModel.login(email, password). Apresenta feedback
+ * de erro localizável e bloqueia ações enquanto o pedido está em curso.
+ *
+ * ### Estrutura:
+ *  - Logótipo + título.
+ *  - OutlinedTextField para e-mail e palavra-passe (com alternância de visibilidade).
+ *  - Botão “Iniciar sessão” com estado loading.
+ *  - Link para “Criar conta”.
+ *  - Interações/Side effects:
+ *  - onLoginSuccess() é chamado quando o login conclui com sucesso.
+ *  - onGoRegister() navega para o ecrã de registo.
+ *  - Validações:
+ *  - Ativa o botão apenas se e-  - mail não estiver vazio e palavra-passe tiver ≥ 6 chars.
+ *
+ * @param vm AuthViewModel para operações de autenticação (Hilt).
+ * @param onLoginSuccess callback após sucesso.
+ * @param onGoRegister callback para navegar para registo.
+ *
+ * **/
 @Composable
 fun LoginScreen(
     vm: AuthViewModel = hiltViewModel(),

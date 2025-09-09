@@ -15,6 +15,33 @@ import com.example.reviewapp.R
 import com.example.reviewapp.ui.components.ReviewDetails
 import com.example.reviewapp.viewmodels.ReviewDetailViewModel
 
+
+    /**
+     *
+     *
+     * **Ecrã de Detalhe da Review.**
+     *
+     * Carrega uma review individual via ReviewDetailViewModel.load(reviewId) e apresenta
+     * imagem (local/cloud), autor, data relativa e conteúdo.
+     *
+     * ### Estrutura:
+     *  - TopAppBar com navegação de retorno.
+     *  - Corpo com imagem (quando disponível) + metadados.
+     *  - Ação “Abrir externamente” para visualizar a foto numa app externa.
+     *
+     * ### Estados:
+     *  - isLoading: mostra CircularProgressIndicator.
+     *  - review == null: apresenta estado de erro.
+     *
+     * ### Side effects:
+     *  - vm.openPhotoExternally(uri) usa ACTION_VIEW com permissões de leitura.
+     *
+     * @param reviewId identificador da review a carregar.
+     * @param vm ReviewDetailViewModel (Hilt).
+     * @param onBack callback para regressar ao ecrã anterior.
+     *
+     *
+        */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReviewDetailScreen(

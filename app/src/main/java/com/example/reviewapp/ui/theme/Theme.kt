@@ -9,6 +9,15 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
+/**
+ * ## Esquema Material 3 — Light
+ *
+ * Constrói o _color scheme_ para tema claro a partir da paleta definida em [Color].
+ * Notas:
+ * - `primary`/`primaryContainer` assumem os lilases de marca para reforçar identidade.
+ * - `surface`/`onSurface` partem de neutros para manter legibilidade em superfícies extensas.
+ * - _Error pipeline_ alinhado com semântica de Material 3 via [DangerRed].
+ */
 private val LightColors = lightColorScheme(
     primary              = BrandLilacLight,
     onPrimary            = Color.Black,
@@ -32,6 +41,14 @@ private val LightColors = lightColorScheme(
     onError              = Color.White
 )
 
+/**
+ * ## Esquema Material 3 — Dark
+ *
+ * Configuração equivalente ao modo claro, mas:
+ * - `background` e `surface` escuros para reduzir luminância global.
+ * - `on*` em tons claros para contraste AA/AAA.
+ * - Containers preservam _brand tint_ para continuidade.
+ */
 private val DarkColors = darkColorScheme(
     primary              = BrandLilacDeep,
     onPrimary            = Color.White,
@@ -55,6 +72,18 @@ private val DarkColors = darkColorScheme(
     onError              = Color.Black
 )
 
+/**
+ * ## Extensões cromáticas fora do Material 3
+ *
+ * Estrutura com cores utilitárias de UI que não pertencem diretamente ao _color scheme_
+ * de Material (ex.: _bottom navigation_ com _chip_ selecionado).
+ *
+ * @property navContainer Cor de fundo da barra de navegação inferior.
+ * @property navShadow    Sombra/elevação projetada da barra (quando aplicável).
+ * @property navSelectedBg Fundo do botão/ícone selecionado na barra.
+ * @property navSelectedIcon Cor do ícone selecionado.
+ * @property logout       Cor semântica para ações de saída (sugerida em botões/ícones).
+ */
 data class AppExtraColors(
     val navContainer: Color,
     val navShadow: Color,
@@ -63,21 +92,49 @@ data class AppExtraColors(
     val logout: Color
 )
 
+/**
+ * `CompositionLocal` para injetar [AppExtraColors] na árvore Compose sem parametrização explícita.
+ *
+ * Mantém um conjunto _fallback_ para cenários de _preview_ e testes.
+ */
 private val LocalAppColors = staticCompositionLocalOf {
     AppExtraColors(
-        navContainer   = NeutralSurfaceLight,
-        navShadow      = BrandLilacDeep.copy(alpha = .35f),
-        navSelectedBg  = BrandLilacLight,
-        navSelectedIcon= BrandBlack,
-        logout         = DangerRed
+        navContainer    = NeutralSurfaceLight,
+        navShadow       = BrandLilacDeep.copy(alpha = .35f),
+        navSelectedBg   = BrandLilacLight,
+        navSelectedIcon = BrandBlack,
+        logout          = DangerRed
     )
 }
 
+/**
+ * Acesso tipado às cores extra do tema da aplicação.
+ *
+ * Exemplo:
+ * ```
+ * Surface(color = AppTheme.colors.navContainer) { ... }
+ * ```
+ */
 object AppTheme {
     val colors: AppExtraColors
         @Composable get() = LocalAppColors.current
 }
 
+/**
+ * ## Tema raiz da aplicação
+ *
+ * Aplica o _color scheme_ Material 3 (light/dark ou dinâmico) e fornece [AppExtraColors]
+ * por `CompositionLocal`, além da tipografia definida em [Typography].
+ *
+ * @param darkTheme `true` para forçar modo escuro; por omissão segue o sistema.
+ * @param dynamicColor ativa Material You (Monet) em Android 12+ (S), usando o extrator de cor
+ *                     do sistema. Em versões anteriores, recorre à paleta estática.
+ * @param content Conteúdo composto a ser tematizado.
+ *
+ * ### Boas práticas
+ * - Evitar capturar [MaterialTheme.colorScheme] fora de composição.
+ * - Usar [AppTheme.colors] para padrões específicos da marca que não existam no esquema Material.
+ */
 @Composable
 fun ReviewAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -92,6 +149,7 @@ fun ReviewAppTheme(
             if (darkTheme) DarkColors else LightColors
         }
 
+    // Definições extra (fora do material) ajustadas por tema.
     val appExtras =
         if (darkTheme) {
             AppExtraColors(

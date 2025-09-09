@@ -21,6 +21,20 @@ import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.util.concurrent.TimeUnit
 
+/**
+ * **Worker** para sincronizar fotos de reviews com o Firebase Storage
+ * e refletir o URL em Firestore + Room.
+ *
+ * Estratégia:
+ * 1) seleciona as reviews pendentes (foto local, sem `photoCloudUrl`);
+ * 2) `putFile` → obtém `downloadUrl`;
+ * 3) atualiza Firestore (`photoCloudUrl`) e Room (`updateCloudUrl`);
+ * 4) repete em lote; se alguma falhar, devolve `Result.retry()`.
+ *
+ * **Constraints:** rede conectada e bateria não fraca.
+ *
+ * @since 1.0
+ */
 @HiltWorker
 class ReviewPhotoSyncWorker @AssistedInject constructor(
     @Assisted appContext: Context,
@@ -59,7 +73,7 @@ class ReviewPhotoSyncWorker @AssistedInject constructor(
 
                 // 3) Refletir em Room
                 reviewDao.updateCloudUrl(r.id, url)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 hadFailures = true
             }
         }
@@ -70,6 +84,12 @@ class ReviewPhotoSyncWorker @AssistedInject constructor(
     companion object {
         private const val KEY_REVIEW_ID = "reviewId"
 
+        /**
+         * Agenda a sincronização de fotos.
+         *
+         * @param reviewId se fornecido, sincroniza apenas essa review; caso contrário, processa lote.
+         * @see Constraints
+         */
         fun enqueue(context: Context, reviewId: String? = null) {
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)

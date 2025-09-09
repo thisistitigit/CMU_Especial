@@ -12,9 +12,18 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.reviewapp.R
 
+/**
+ * Helpers para **notificações** com *custom view* (tile) e canal dedicado.
+ *
+ * Responsabilidades:
+ * - Garantir canal `nearby_reviews` (Android O+);
+ * - Construir notificações temáticas (dark/light) com cores da marca;
+ * - Apresentar a notificação com ids não colidentes (timestamp).
+ */
 object NotificationUtils {
     private const val NEARBY_CHANNEL_ID = "nearby_reviews"
 
+    /** Garante a existência do canal de notificações "Perto de si". */
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -31,6 +40,12 @@ object NotificationUtils {
         }
     }
 
+    /**
+     * Cria uma notificação com _layout_ customizado (pequeno) adaptado ao tema.
+     *
+     * @param context contexto.
+     * @param placeName nome do estabelecimento (pode ser `null` → titulo genérico).
+     */
     fun createNotification(context: Context, placeName: String?): Notification {
         val isDark = (context.resources.configuration.uiMode and
                 Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -66,6 +81,11 @@ object NotificationUtils {
             .build()
     }
 
+    /**
+     * Envia a notificação com um id baseado no tempo atual.
+     *
+     * @return `true` em sucesso, `false` se falhar por falta de permissão (Tiramisu+).
+     */
     fun showNotification(context: Context, notification: Notification): Boolean {
         return try {
             NotificationManagerCompat.from(context).notify(

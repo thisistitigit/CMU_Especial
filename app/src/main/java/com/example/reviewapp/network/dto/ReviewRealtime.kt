@@ -7,6 +7,12 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.conflate
 
+/**
+ * Observa reviews filtradas por um campo (ex.: `"placeId"` ou `"userId"`),
+ * ordenadas por `createdAt DESC`. Emite listas **inteiras** (snapshots).
+ *
+ * **Backpressure:** usa `conflate()` — a UI recebe apenas o último valor.
+ */
 fun FirebaseFirestore.observeByField(
     field: String,
     value: Any,
@@ -24,7 +30,10 @@ fun FirebaseFirestore.observeByField(
     awaitClose { reg.remove() }
 }.conflate()
 
-/** Stream global para o leaderboard. Define um limite alto (ex.: 5000) para não rebentar em produção. */
+/**
+ * Stream **global** de reviews (ex.: para leaderboards/timelines).
+ * Define um `limit` alto (p.ex. 5000) para proteger custos.
+ */
 fun FirebaseFirestore.observeAll(limit: Long = 5000) = callbackFlow<List<Review>> {
     val reg = reviewsCollection()
         .orderBy("createdAt", Query.Direction.DESCENDING)

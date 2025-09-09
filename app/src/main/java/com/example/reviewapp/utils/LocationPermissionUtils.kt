@@ -14,6 +14,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
+/**
+ * Estado estável para gerir permissões de **localização** (fine/coarse) em Compose.
+ *
+ * Exposto como um objeto imutável com *callbacks* para pedir permissões e abrir
+ * as definições da app, permitindo **desacoplar** UI de lógica de permissões.
+ *
+ * @property isGranted se a app tem pelo menos uma das permissões `FINE` ou `COARSE`.
+ * @property showRationale indica se deve ser apresentado racional ao utilizador.
+ * @property ask dispara o pedido de permissões (ou abre settings se não é possível pedir).
+ * @property openSettings abre as definições da app para o utilizador ajustar permissões.
+ */
 @Stable
 data class LocationPermissionState(
     val isGranted: Boolean,
@@ -22,6 +33,17 @@ data class LocationPermissionState(
     val openSettings: () -> Unit
 )
 
+/**
+ * *Hook* Compose que cria e mantém um [LocationPermissionState].
+ *
+ * Estratégia:
+ * - Verifica `ACCESS_FINE_LOCATION` e `ACCESS_COARSE_LOCATION`;
+ * - Se `autoRequestOnStart` e o sistema permitir, pede logo as permissões;
+ * - Invoca [onGranted] assim que uma das permissões é concedida.
+ *
+ * @param autoRequestOnStart se `true`, tenta pedir permissões no primeiro frame.
+ * @param onGranted callback invocado quando a permissão é concedida.
+ */
 @Composable
 fun rememberLocationPermissionState(
     autoRequestOnStart: Boolean = true,
@@ -81,7 +103,6 @@ fun rememberLocationPermissionState(
         }
     }
 
-
     val openSettings: () -> Unit = {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
             Uri.fromParts("package", context.packageName, null))
@@ -97,4 +118,3 @@ fun rememberLocationPermissionState(
         )
     }
 }
-

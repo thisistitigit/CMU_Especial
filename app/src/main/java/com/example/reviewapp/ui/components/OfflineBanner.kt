@@ -25,8 +25,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
- * Lê o estado atual de conectividade (true = online, false = offline) e atualiza reativamente.
- * Não requer permissões.
+ * Lê o estado de conectividade e expõe como `State<Boolean>`.
+ *
+ * Implementação híbrida:
+ * - API 23+: usa `ConnectivityManager` + `NetworkCapabilities` validadas.
+ * - Pré-23: _fallback_ em `activeNetworkInfo`.
+ *
+ * @return `State` que emite `true` quando **online** e `false` quando **offline**.
  */
 @Composable
 fun rememberIsOnline(): State<Boolean> {
@@ -51,12 +56,8 @@ fun rememberIsOnline(): State<Boolean> {
 
     DisposableEffect(cm) {
         val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                onlineState.value = computeOnlineNow()
-            }
-            override fun onLost(network: Network) {
-                onlineState.value = computeOnlineNow()
-            }
+            override fun onAvailable(network: Network) { onlineState.value = computeOnlineNow() }
+            override fun onLost(network: Network) { onlineState.value = computeOnlineNow() }
             override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
                 onlineState.value = computeOnlineNow()
             }
@@ -71,16 +72,17 @@ fun rememberIsOnline(): State<Boolean> {
             cm.registerNetworkCallback(req, callback)
         }
 
-        onDispose {
-            runCatching { cm.unregisterNetworkCallback(callback) }
-        }
+        onDispose { runCatching { cm.unregisterNetworkCallback(callback) } }
     }
 
     return onlineState
 }
 
 /**
- * Banner simples que aparece no topo quando estás offline.
+ * Banner de **offline** para o topo da UI.
+ *
+ * Visível apenas quando `rememberIsOnline()` indica offline.
+ * Marcado com `contentDescription="offline_banner"` para testes UI.
  */
 @Composable
 fun OfflineBanner(modifier: Modifier = Modifier) {

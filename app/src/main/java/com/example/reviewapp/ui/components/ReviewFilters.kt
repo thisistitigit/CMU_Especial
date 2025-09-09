@@ -2,8 +2,10 @@ package com.example.reviewapp.ui.components
 
 import com.example.reviewapp.data.models.Review
 
+/** Ordenação de reviews por data. */
 enum class ReviewSort { OLDEST_FIRST, NEWEST_FIRST }
 
+/** Estado serializável de filtros/ordenação de reviews. */
 data class ReviewFilterState(
     val sort: ReviewSort = ReviewSort.OLDEST_FIRST,
     val withPhotoOnly: Boolean = false,
@@ -11,6 +13,13 @@ data class ReviewFilterState(
     val minStars: Int? = null
 )
 
+/**
+ * Aplica filtros e ordenação a uma lista de reviews.
+ *
+ * @param all lista original.
+ * @param f estado de filtros (foto, minhas, min estrelas, sort).
+ * @param currentUserId UID atual para `onlyMine`.
+ */
 fun applyReviewFilters(
     all: List<Review>,
     f: ReviewFilterState,

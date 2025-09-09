@@ -3,6 +3,13 @@ package com.example.reviewapp.network.mappers
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.network.dto.GooglePlacesResponse
 
+/**
+ * Mapeia uma resposta de Nearby para uma lista de [Place] de domínio.
+ *
+ * Gera um `id` sintético `lat,lng:name` quando `place_id` não está presente
+ * (de forma a permitir cache e cliques na UI), descartando resultados
+ * incompletos (sem `lat|lng|name`).
+ */
 fun GooglePlacesResponse.toPlaces(): List<Place> =
     results.mapNotNull { r ->
         val lat = r.geometry?.location?.lat

@@ -30,6 +30,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+/**
+ * **Home**: ponto de entrada com:
+ * - *Search box* (geocoding textual para coordenadas),
+ * - Secção “Perto de mim” (se permissão localização) e resultados de pesquisa,
+ * - Destaques de **leaderboard** (melhor classificados).
+ *
+ * ### Interações
+ * - Ao conceder permissões, `LocationPermissionGate` chama `vm.refreshNearMe()`.
+ * - `TextField` com ação IME *Search* faz `geocodeFirstLatLng(...)` e atualiza o *viewport*.
+ *
+ * ### Estados visuais
+ * - Mostra *spinner* compacto quando `isSearching` ou `vm.state.isLoading` ou `lb.isLoading`.
+ *
+ * @param vm ViewModel de busca/descoberta.
+ * @param leaderboardVm ViewModel do leaderboard (top estabelecimentos).
+ * @param onOpenDetails Navegar para detalhe do estabelecimento.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -171,6 +188,17 @@ fun HomeScreen(
     }
 }
 
+/**
+ * Geocodifica uma string (ex.: "Porto", "Av. da Liberdade, Lisboa") para a **primeira** coordenada disponível.
+ *
+ * ### Observações
+ * - Usa `Geocoder` (bloqueante) num `Dispatcher.IO` para não bloquear a *main thread*.
+ * - Em dispositivos sem *backends* de geocodificação ou sem rede pode devolver `null`.
+ *
+ * @param context Contexto Android.
+ * @param query Texto a geocodificar.
+ * @return A primeira [LatLng] encontrada ou `null`.
+ */
 private suspend fun geocodeFirstLatLng(
     context: Context,
     query: String

@@ -11,6 +11,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+/**
+ * Receiver para **updates de localização** (ex.: FusedLocation + PendingIntent).
+ *
+ * Ao receber uma nova localização, solicita ao [GeofenceRegistrar] um
+ * `refreshGeofences`, permitindo adaptar as cercas ao movimento do utilizador.
+ *
+ * @since 1.0
+ */
 class LocationUpdateReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val res = LocationResult.extractResult(intent) ?: return

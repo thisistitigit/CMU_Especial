@@ -13,6 +13,16 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
+/**
+ * **VM** da página de detalhes de um *place*.
+ *
+ * Combina 3 fontes reativas:
+ * - Room: `placeDao.flowById(placeId)` (dados persistidos/cached);
+ * - Firestore: `streamPlaceMetaFromReviews(placeId)` (nome/morada derivada de reviews);
+ * - Firestore/Room: `streamPlaceReviews(placeId)` (últimas reviews para média interna).
+ *
+ * Também dispara `placeRepo.getDetails(placeId)` **onStart** para enriquecer Room via API.
+ */
 @HiltViewModel
 class DetailsViewModel @Inject constructor(
     private val placeDao: PlaceDao,
@@ -22,6 +32,7 @@ class DetailsViewModel @Inject constructor(
 
     private val TAG = "DetailsVM"
 
+    /** Estado enriquecido para o ecrã de detalhes. */
     data class UiState(
         val isLoading: Boolean = true,
         val place: Place? = null,
@@ -34,6 +45,12 @@ class DetailsViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
+    /**
+     * Observa e mescla fontes para o [placeIdRaw].
+     *
+     * - Prefere **nome/morada** não-vazios (evita placeholders).
+     * - Calcula média interna a partir das reviews locais.
+     */
     fun load(placeIdRaw: String) {
         val placeId = placeIdRaw.trim()
         viewModelScope.launch {
@@ -72,12 +89,14 @@ class DetailsViewModel @Inject constructor(
         }
     }
 
+    /** Heurística para detetar placeholders típicos. */
     private fun String.isPlaceholderName() =
         isBlank() || equals("Estabelecimento", true) || startsWith("Local ")
 
     private fun preferNonBlank(primary: String?, fallback: String?) =
         primary?.takeIf { it.isNotBlank() } ?: fallback?.takeIf { it.isNotBlank() }
 
+    /** Merge campo-a-campo de [Place] (Room vs. meta-reviews). */
     private fun mergePlaceFieldWise(local: Place?, meta: Place?): Place? {
         if (local == null && meta == null) return null
         val localName = local?.name
@@ -88,13 +107,9 @@ class DetailsViewModel @Inject constructor(
             else localName
         val bestAddr = preferNonBlank(local?.address, meta?.address) ?: meta?.address
         val base = local ?: meta!!
-        return base.copy(
-            name = bestName ?: base.name,
-            address = bestAddr ?: base.address
-        )
+        return base.copy(name = bestName ?: base.name, address = bestAddr ?: base.address)
     }
 
-    fun call(number: String) = runCatching { /* ACTION_DIAL na UI */ }
-    fun openOnMap(lat: Double, lng: Double, label: String) = Unit
-    fun getDirections(lat: Double, lng: Double) = Unit
+    /** _Stubs_ acionados pela UI (navegação externa). */
+    fun call(number: String) = runCatching { }
 }

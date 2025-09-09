@@ -15,6 +15,12 @@ import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * **VM** para o histórico de reviews do utilizador autenticado.
+ *
+ * Observa `streamUserHistory(uid)` e **enriquece** cada item com metadados
+ * do *place* (nome/morada) via `PlaceRepository.enrichIds`.
+ */
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val reviewRepo: ReviewRepository,
@@ -22,6 +28,7 @@ class HistoryViewModel @Inject constructor(
     private val auth: FirebaseAuth
 ) : ViewModel() {
 
+    /** Linha normalizada para renderização do histórico. */
     data class Row(
         val reviewId: String,
         val placeId: String,
@@ -33,6 +40,7 @@ class HistoryViewModel @Inject constructor(
         val photoCloudUrl: String?
     )
 
+    /** Estado para ecrã de histórico. */
     data class UiState(
         val isLoading: Boolean = true,
         val items: List<Row> = emptyList(),
@@ -44,6 +52,7 @@ class HistoryViewModel @Inject constructor(
 
     init { observe() }
 
+    /** Subscreve o fluxo remoto/local e projeta em [Row]. */
     private fun observe() = viewModelScope.launch {
         val uid = auth.requireSignedInUid()
 

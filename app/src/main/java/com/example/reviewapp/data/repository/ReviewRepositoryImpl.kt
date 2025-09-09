@@ -36,6 +36,19 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.tasks.await
 
+/**
+ * Implementação de [ReviewRepository] com **Room + Firestore + Storage**.
+ *
+ * Fluxo de criação:
+ * 1) valida regras (distância <= 50m; última review > 30min);
+ * 2) grava no Room (offline-first);
+ * 3) _best effort_ Firestore; 4) upload da foto (imediato ou agenda worker).
+ *
+ * Streams combinam **flow do Room** com observadores Firestore (quando presentes),
+ * atualizando o cache em tempo-real.
+ *
+ * @since 1.0
+ */
 class ReviewRepositoryImpl(
     private val reviewDao: ReviewDao,
     private val placeDao: PlaceDao,
@@ -60,12 +73,14 @@ class ReviewRepositoryImpl(
 
         enforceCanReviewOrThrow(uid, review.placeId, userLat, userLng, now)
 
+        // Normaliza UID e timestamp e grava localmente (offline-first)
         val normalized = review.copy(userId = uid, createdAt = now)
         reviewDao.upsert(normalized.toEntity())
 
+        // Firestore (best-effort)
         firestore?.let { db -> runCatching { saveReviewDocs(db, normalized, null) } }
 
-        // Foto (tenta já; senão agenda)
+        // Foto: tenta agora; senão agenda um worker
         val st = storage
         if (st != null && normalized.photoLocalPath != null) {
             val cloudUrl = runCatching { uploadPhotoIfNeeded(st, normalized) }.getOrNull()
@@ -79,10 +94,19 @@ class ReviewRepositoryImpl(
         }
     }
 
+    /**
+     * Exceção lançada quando a review viola as regras.
+     */
     class ReviewDeniedException(val reason: Reason) : IllegalStateException(reason.name) {
         enum class Reason { TOO_FAR, TOO_SOON }
     }
 
+    /**
+     * Aplica regras de proximidade e frequência e lança [ReviewDeniedException] em caso de violação.
+     *
+     * @throws IllegalStateException se o place não existir na cache.
+     * @throws ReviewDeniedException se estiver demasiado longe ou demasiado cedo.
+     */
     suspend fun enforceCanReviewOrThrow(
         userId: String, placeId: String, userLat: Double, userLng: Double, now: Long
     ) {
@@ -101,6 +125,11 @@ class ReviewRepositoryImpl(
         }
     }
 
+    /**
+     * Faz upload da foto para o Firebase Storage se necessário e devolve a URL pública.
+     *
+     * @return URL final ou `null` se não aplicável/falhou.
+     */
     private suspend fun uploadPhotoIfNeeded(storage: FirebaseStorage, review: Review): String? {
         if (review.photoCloudUrl != null) return review.photoCloudUrl
         val localPath = review.photoLocalPath ?: return null
@@ -117,6 +146,7 @@ class ReviewRepositoryImpl(
         }.getOrNull()
     }
 
+    /** Persiste/atualiza documento da review no Firestore. */
     private suspend fun saveReviewDocs(
         db: FirebaseFirestore,
         review: Review,

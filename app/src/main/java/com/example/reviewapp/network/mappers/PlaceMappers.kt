@@ -3,6 +3,7 @@ package com.example.reviewapp.network.mappers
 import com.example.reviewapp.data.locals.PlaceEntity
 import com.example.reviewapp.data.models.Place
 
+/** Converte um `PlaceEntity` (Room) para modelo de domínio [Place]. */
 fun PlaceEntity.toModel() = Place(
     id = id,
     name = name,
@@ -14,7 +15,8 @@ fun PlaceEntity.toModel() = Place(
     ratingsCount = ratingsCount
 )
 
- fun Place.toEntity(now: Long) = PlaceEntity(
+/** Converte um [Place] para `PlaceEntity` para cache local, marcando `lastFetchedAt`. */
+fun Place.toEntity(now: Long) = PlaceEntity(
     id = id,
     name = name,
     phone = phone,

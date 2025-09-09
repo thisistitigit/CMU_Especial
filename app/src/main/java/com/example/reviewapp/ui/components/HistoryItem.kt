@@ -2,7 +2,6 @@ package com.example.reviewapp.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -22,6 +21,20 @@ import coil.compose.AsyncImage
 import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.HistoryViewModel
 
+/**
+ * Cartão compacto para um item do **histórico de reviews**.
+ *
+ * Layout:
+ * - *Thumbnail* 64dp (foto local/cloud) ou *placeholder* com iniciais.
+ * - Coluna com `placeName`, `pastryName` e _row_ de estrelas + data.
+ * - *Chevron* à direita indicando ação de detalhe.
+ *
+ * Perfomance:
+ * - Usa `AsyncImage` (Coil) com `ContentScale.Crop` para miniaturas.
+ *
+ * @param row linha de dados preparada pelo [HistoryViewModel].
+ * @param onOpen ação ao tocar no cartão (abre detalhes da review).
+ */
 @Composable
 fun HistoryItem(
     row: HistoryViewModel.Row,
@@ -55,6 +68,7 @@ fun HistoryItem(
                     contentScale = ContentScale.Crop
                 )
             } else {
+                // Placeholder com iniciais do local (melhora reconhecimento imediato)
                 Surface(
                     modifier = Modifier.size(64.dp),
                     shape = RoundedCornerShape(16.dp),
@@ -122,6 +136,12 @@ fun HistoryItem(
     }
 }
 
+/**
+ * Extrai duas iniciais de um nome para _placeholders_ de avatar.
+ * - String vazia → `"?"`
+ * - Uma palavra → 2 primeiras letras
+ * - Várias palavras → primeira letra da 1.ª + primeira da última
+ */
 private fun initialsFrom(name: String): String {
     val parts = name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
     return when {
@@ -131,10 +151,14 @@ private fun initialsFrom(name: String): String {
     }
 }
 
-
+/**
+ * Formata `epochMillis` para `dd/MM/yyyy HH:mm` no fuso do dispositivo.
+ *
+ * @receiver epoch millis UTC.
+ * @return string formatada para UI legível.
+ */
 fun Long.asDateTimeLabel(): String =
     java.time.Instant.ofEpochMilli(this)
         .atZone(java.time.ZoneId.systemDefault())
         .toLocalDateTime()
         .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
-

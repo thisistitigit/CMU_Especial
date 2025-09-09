@@ -24,6 +24,20 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.reviewapp.R
 
+/**
+ * *Gate* de permissões de localização (foreground + background).
+ *
+ * Estratégia:
+ * - Verifica permissões **fine/coarse** (foreground).
+ * - Em Android Q (29)+ tenta pedir **ACCESS_BACKGROUND_LOCATION** diretamente.
+ * - Em Android 11+ recomenda abrir **App Settings** para "Allow all the time".
+ *
+ * Mostra um `AlertDialog` explicativo quando em falta, com ações contextuais:
+ * pedir permissões ou abrir as definições.
+ *
+ * @param autoShowIfNeeded se `true`, mostra o diálogo automaticamente quando faltar permissão.
+ * @param onAllGranted callback quando foreground + background estiverem garantidas.
+ */
 @Composable
 fun LocationPermissionGate(
     autoShowIfNeeded: Boolean = true,

@@ -3,17 +3,20 @@ package com.example.reviewapp.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.reviewapp.data.models.Place
-import kotlin.math.round
 
+/**
+ * Secção horizontal genérica de locais, com cartões elevados.
+ *
+ * @param title título apresentado à esquerda.
+ * @param places lista de locais a renderizar.
+ * @param onPlaceClick ação quando o cartão é selecionado (recebe `id`).
+ */
 @Composable
 fun PlaceHorizontalSection(
     title: String,
@@ -44,6 +47,7 @@ fun PlaceHorizontalSection(
     }
 }
 
+/** Cartão compacto de local com nome, morada e **RatingRow**. */
 @Composable
 private fun PlaceCardElevated(place: Place, onClick: () -> Unit) {
     ElevatedCard(

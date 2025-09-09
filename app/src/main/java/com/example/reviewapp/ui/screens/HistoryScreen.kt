@@ -16,6 +16,20 @@ import com.example.reviewapp.ui.components.HistoryItem
 import com.example.reviewapp.ui.components.OfflineBanner
 import com.example.reviewapp.viewmodels.HistoryViewModel
 
+/**
+ * Ecrã de **Histórico do Utilizador**.
+ *
+ * Apresenta a lista de reviews do utilizador autenticado, com:
+ * - *Card* por review (foto, nome do estabelecimento, doçaria, estrelas, data),
+ * - Mensagens de estado (**vazio**, **erro**, **loading**),
+ * - *Banner* offline.
+ *
+ * ### Notas
+ * - A lista usa `key` estável `placeId_createdAt` para melhor diffing.
+ *
+ * @param viewModel ViewModel que expõe o *stream* de histórico.
+ * @param onOpenPlaceDetails Navega para o detalhe de um estabelecimento.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(

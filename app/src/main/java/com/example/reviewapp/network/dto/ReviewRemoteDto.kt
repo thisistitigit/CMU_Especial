@@ -3,6 +3,10 @@ package com.example.reviewapp.network.dto
 import androidx.annotation.Keep
 import com.google.firebase.database.IgnoreExtraProperties
 
+/**
+ * DTO remoto (Firestore) para uma review.
+ * Mantém compatibilidade com esquemas mais largos via `@IgnoreExtraProperties`.
+ */
 @Keep
 @IgnoreExtraProperties
 data class ReviewRemoteDto(
@@ -17,6 +21,4 @@ data class ReviewRemoteDto(
     var comment: String = "",
     var createdAt: Long = 0L,
     var photoCloudUrl: String? = null
-
 )
-

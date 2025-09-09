@@ -2,6 +2,10 @@ package com.example.reviewapp.network.dto
 
 import androidx.annotation.Keep
 
+/**
+ * DTO para a resposta do **Place Details**.
+ * Campos minimamente tipados para reduzir `nullability` e facilitar mapeamento.
+ */
 @Keep
 data class GooglePlaceDetailsResponse(
     val status: String? = null,

@@ -3,7 +3,7 @@ package com.example.reviewapp.network.mappers
 import com.example.reviewapp.data.models.Place
 import com.example.reviewapp.network.dto.GooglePlaceDetailsResponse
 
-
+/** Mapeia **Place Details** para [Place] de domínio (defensivo a `nulls`). */
 fun GooglePlaceDetailsResponse.toPlace(): Place? {
     val r = result ?: return null
     val id   = r.place_id ?: return null

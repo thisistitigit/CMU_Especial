@@ -11,8 +11,15 @@ import kotlinx.coroutines.launch
 import dagger.hilt.android.EntryPointAccessors
 import com.example.reviewapp.di.GeofenceReceiverEntryPoint
 import com.example.reviewapp.services.notifyNearby
-import com.example.reviewapp.utils.TimeUtils
 
+/**
+ * Receiver de transições de **Geofence** (ENTER/DWELL).
+ *
+ * Ao disparar, carrega o `PlaceDao` via [GeofenceReceiverEntryPoint],
+ * obtém os locais pelos `requestId`s e emite uma notificação contextual.
+ *
+ * @since 1.0
+ */
 class GeofenceReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {

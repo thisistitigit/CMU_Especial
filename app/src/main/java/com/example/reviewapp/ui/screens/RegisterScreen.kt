@@ -24,6 +24,33 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.reviewapp.R
 import com.example.reviewapp.viewmodels.AuthViewModel
 
+    /**
+     * **Ecrã de registo.**
+     *
+     * Cria a conta via AuthViewModel.registerWithUsername(), validações locais:
+     * username: regex ^[a-z0-9_]{3,20}$.
+     * password: mínimo 6 caracteres e confirmação igual.
+     *
+     * ### Estrutura:
+     *  - Logótipo + título.
+     *  - Campos username, email, password, confirm password com supporting text.
+     *  - Botão “Criar conta” com estado loading.
+     *  - Link "Já tenho conta".
+     *  - Erros suportados:
+     *  - invalid_username, passwords_mismatch, username_taken,
+     *  - register_failed, profile_create_failed, not_authenticated_after_register.
+     *
+     * ### Side effects:
+     *  - onRegisterSuccess() quando o registo conclui com sucesso.
+     *  - onGoLogin() para navegar para o login.
+     *
+     *
+     * @param vm AuthViewModel (Hilt).
+     * @param onRegisterSuccess callback de sucesso.
+     * @param onGoLogin callback para navegar para login.
+     *
+     */
+
 @Composable
 fun RegisterScreen(
     vm: AuthViewModel = hiltViewModel(),

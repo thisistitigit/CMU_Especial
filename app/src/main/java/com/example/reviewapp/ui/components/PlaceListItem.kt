@@ -1,10 +1,7 @@
 package com.example.reviewapp.ui.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +10,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.reviewapp.data.models.Place
 
+/**
+ * Linha de lista compacta para um **Place**.
+ *
+ * Mostra nome, morada (1 linha) e rating Google abreviado (ex.: `4.5★`).
+ *
+ * @param place modelo de domínio do local.
+ * @param onClick ação ao tocar na linha.
+ */
 @Composable
 fun PlaceListItem(
     place: Place,

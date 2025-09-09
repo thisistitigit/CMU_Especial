@@ -20,7 +20,30 @@ import com.example.reviewapp.ui.components.rememberIsOnline
 import com.example.reviewapp.ui.theme.AppTheme
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.tasks.await
-
+    /***
+     *
+     * **Ecrã de Perfil do utilizador.**
+     *
+     * Lê o documento users/{uid} do Firestore (SERVER se online, CACHE se offline) e
+     *
+     * mostra dados básicos (username, e-mail). Inclui ação de terminar sessão.
+     *
+     * ### Estrutura:
+     * AppBar com ação de logout.
+     * OfflineBanner para status de rede.
+     * Cartão com “Visão geral”, barra de progresso, mensagens de erro/offline sem cache.
+     * Carregamento de dados:
+     * Reage a mudanças de uid e conectividade (rememberIsOnline()).
+     * Usa Source.SERVER quando online, caso contrário Source.CACHE.
+     *
+     * ### Acessibilidade/UX:
+     * Mensagens claras em caso de erro ou ausência de cache.
+     * Tipografia consistente para rótulos/valores (ProfileRow).
+     *
+     * @param authViewModel AuthViewModel (Hilt) com auth e db.
+     * @param onLogout callback executado ao clicar no ícone de terminar sessão.
+     *
+     */
 @Composable
 fun ProfileScreen(
     authViewModel: AuthViewModel = hiltViewModel(),

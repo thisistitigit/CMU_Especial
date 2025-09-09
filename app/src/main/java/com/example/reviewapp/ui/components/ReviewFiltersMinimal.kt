@@ -7,27 +7,22 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.Sort
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.reviewapp.R
 
 /**
- * Versão minimal: dois ícones (ordenar + filtro) sem fundo/sem texto,
- * cada um a abrir o respetivo DropdownMenu.
+ * UI mínima para controlo de **ordenação** e **filtros** de reviews.
+ *
+ * Dois ícones (Sort/Filter) que abrem `DropdownMenu`s com:
+ * - ordenação (mais antigas/mais recentes);
+ * - filtros (com foto, só minhas, mínimo de estrelas).
+ *
+ * @param state estado atual.
+ * @param onChange chamado com o novo estado após qualquer alteração.
  */
 @Composable
 fun ReviewFiltersMinimal(
@@ -42,38 +37,18 @@ fun ReviewFiltersMinimal(
 
         Box {
             IconButton(onClick = { sortOpen = true }) {
-                Icon(
-                    imageVector = Icons.Filled.Sort,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+                Icon(Icons.Filled.Sort, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
             DropdownMenu(expanded = sortOpen, onDismissRequest = { sortOpen = false }) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_sort_oldest_first)) },
-                    leadingIcon = {
-                        RadioButton(
-                            selected = state.sort == ReviewSort.OLDEST_FIRST,
-                            onClick = null
-                        )
-                    },
-                    onClick = {
-                        onChange(state.copy(sort = ReviewSort.OLDEST_FIRST))
-                        sortOpen = false
-                    }
+                    leadingIcon = { RadioButton(selected = state.sort == ReviewSort.OLDEST_FIRST, onClick = null) },
+                    onClick = { onChange(state.copy(sort = ReviewSort.OLDEST_FIRST)); sortOpen = false }
                 )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_sort_newest_first)) },
-                    leadingIcon = {
-                        RadioButton(
-                            selected = state.sort == ReviewSort.NEWEST_FIRST,
-                            onClick = null
-                        )
-                    },
-                    onClick = {
-                        onChange(state.copy(sort = ReviewSort.NEWEST_FIRST))
-                        sortOpen = false
-                    }
+                    leadingIcon = { RadioButton(selected = state.sort == ReviewSort.NEWEST_FIRST, onClick = null) },
+                    onClick = { onChange(state.copy(sort = ReviewSort.NEWEST_FIRST)); sortOpen = false }
                 )
             }
         }
@@ -82,41 +57,23 @@ fun ReviewFiltersMinimal(
 
         Box {
             IconButton(onClick = { filterOpen = true }) {
-                Icon(
-                    imageVector = Icons.Filled.FilterAlt,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
+                Icon(Icons.Filled.FilterAlt, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
             }
             DropdownMenu(expanded = filterOpen, onDismissRequest = { filterOpen = false }) {
 
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_with_photo)) },
-                    leadingIcon = {
-                        Checkbox(
-                            checked = state.withPhotoOnly,
-                            onCheckedChange = null
-                        )
-                    },
-                    onClick = {
-                        onChange(state.copy(withPhotoOnly = !state.withPhotoOnly))
-                    }
+                    leadingIcon = { Checkbox(checked = state.withPhotoOnly, onCheckedChange = null) },
+                    onClick = { onChange(state.copy(withPhotoOnly = !state.withPhotoOnly)) }
                 )
 
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_only_mine)) },
-                    leadingIcon = {
-                        Checkbox(
-                            checked = state.onlyMine,
-                            onCheckedChange = null
-                        )
-                    },
-                    onClick = {
-                        onChange(state.copy(onlyMine = !state.onlyMine))
-                    }
+                    leadingIcon = { Checkbox(checked = state.onlyMine, onCheckedChange = null) },
+                    onClick = { onChange(state.copy(onlyMine = !state.onlyMine)) }
                 )
 
-                androidx.compose.material3.Divider()
+                Divider()
 
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_min_stars)) },
@@ -126,29 +83,15 @@ fun ReviewFiltersMinimal(
 
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.reviews_filter_any_stars)) },
-                    leadingIcon = {
-                        RadioButton(
-                            selected = state.minStars == null,
-                            onClick = null
-                        )
-                    },
-                    onClick = {
-                        onChange(state.copy(minStars = null))
-                    }
+                    leadingIcon = { RadioButton(selected = state.minStars == null, onClick = null) },
+                    onClick = { onChange(state.copy(minStars = null)) }
                 )
 
                 for (s in 5 downTo 1) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.reviews_filter_min_stars_value, s)) },
-                        leadingIcon = {
-                            RadioButton(
-                                selected = state.minStars == s,
-                                onClick = null
-                            )
-                        },
-                        onClick = {
-                            onChange(state.copy(minStars = s))
-                        }
+                        leadingIcon = { RadioButton(selected = state.minStars == s, onClick = null) },
+                        onClick = { onChange(state.copy(minStars = s)) }
                     )
                 }
             }

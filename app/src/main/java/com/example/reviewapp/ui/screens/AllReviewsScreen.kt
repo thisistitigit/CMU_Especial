@@ -21,6 +21,26 @@ import com.example.reviewapp.ui.components.applyReviewFilters
 import com.example.reviewapp.viewmodels.AllReviewsViewModel
 import com.example.reviewapp.viewmodels.AuthViewModel
 
+/**
+ * Ecrã que lista **todas as reviews** de um determinado estabelecimento.
+ *
+ * ### Responsabilidades
+ * - Carrega e observa o estado de `AllReviewsViewModel`.
+ * - Aplica filtros/ordenação reativa via [ReviewFilterState].
+ * - Mostra estados de **loading**, **empty** e **erro**.
+ * - Integra o *banner* [OfflineBanner] para consciência de conectividade.
+ *
+ * ### Performance & Recomposição
+ * - `filtered` é memoizado com `remember(...)` para reduzir recomposições
+ *   quando filtros/UID/reviews não mudam.
+ * - `LazyColumn` usa `key = { it.id }` para diffs estáveis.
+ *
+ * @param placeId ID do estabelecimento alvo.
+ * @param vm ViewModel que expõe as reviews e ciclo de carregamento.
+ * @param authVm ViewModel para obter o UID atual (filtrar "só as minhas").
+ * @param onBack Ação para voltar atrás (navegação).
+ * @param onOpenReviewDetails Ação para abrir detalhes de uma review.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AllReviewsScreen(

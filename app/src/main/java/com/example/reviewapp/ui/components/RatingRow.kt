@@ -17,6 +17,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.round
 
+/**
+ * Linha compacta `"★ 4.7 / 5 • 120"` com ícone e texto.
+ *
+ * @param rating média (double). Arredondado a 1 casa.
+ * @param count contagem opcional para sufixo (ex. `"• 120"`).
+ * @param showSlash5 se `true`, mostra `" / 5"`.
+ * @param iconTint cor do ícone (por omissão `primary`).
+ */
 @Composable
 fun RatingRow(
     rating: Double,
@@ -38,10 +46,7 @@ fun RatingRow(
         )
         Spacer(Modifier.width(6.dp))
         val rounded = round(rating * 10) / 10.0
-        Text(
-            text = if (showSlash5) "$rounded / 5" else "$rounded",
-            style = textStyle
-        )
+        Text(text = if (showSlash5) "$rounded / 5" else "$rounded", style = textStyle)
         count?.let {
             Spacer(Modifier.width(8.dp))
             Text(

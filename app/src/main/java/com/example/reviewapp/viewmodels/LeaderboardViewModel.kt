@@ -15,6 +15,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+/**
+ * **VM** do Leaderboard (estabelecimentos e doçarias).
+ *
+ * Estratégia:
+ * - Observa `streamAllReviews()` (limitado no repo) → projeta para entidades Room;
+ * - Agrega **por local** e **por doçaria** (média e contagem);
+ * - Enriquecer nomes/moradas via `PlaceRepository.enrichIds`;
+ * - Oferece `refresh()` para *full sync* (paginado) e recálculo.
+ */
 @HiltViewModel
 class LeaderboardViewModel @Inject constructor(
     private val reviewDao: ReviewDao,
@@ -22,8 +31,10 @@ class LeaderboardViewModel @Inject constructor(
     private val placeRepo: PlaceRepository
 ) : ViewModel() {
 
+    /** Aba ativa da UI. */
     enum class Tab { ESTABLISHMENTS, PASTRIES }
 
+    /** Linha agregada por **place**. */
     data class PlaceRow(
         val placeId: String,
         val name: String,
@@ -32,12 +43,14 @@ class LeaderboardViewModel @Inject constructor(
         val count: Int
     )
 
+    /** Linha agregada por **doçaria**. */
     data class PastryRow(
         val pastryName: String,
         val avg: Double,
         val count: Int
     )
 
+    /** Estado completo do ecrã de leaderboard. */
     data class UiState(
         val isLoading: Boolean = true,
         val tab: Tab = Tab.ESTABLISHMENTS,
@@ -51,6 +64,7 @@ class LeaderboardViewModel @Inject constructor(
 
     init { observeLeaderboard() }
 
+    /** Dispara sincronização paginada e recalcula agregados. */
     fun refresh() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(isLoading = true, error = null)
@@ -70,8 +84,10 @@ class LeaderboardViewModel @Inject constructor(
         }
     }
 
+    /** Seleciona a aba ativa. */
     fun onSelectTab(tab: Tab) { _ui.value = _ui.value.copy(tab = tab) }
 
+    /** Observa fluxo global e projeta para [UiState]. */
     private fun observeLeaderboard() = viewModelScope.launch {
         _ui.value = _ui.value.copy(isLoading = true, error = null)
 
@@ -91,6 +107,7 @@ class LeaderboardViewModel @Inject constructor(
             .collect { state -> _ui.value = state }
     }
 
+    /** Agregação por estabelecimento com ordenação: média DESC, contagem DESC, nome ASC. */
     private fun aggregateEstablishmentsFromReviews(
         reviews: List<ReviewEntity>
     ): List<PlaceRow> {
@@ -121,6 +138,7 @@ class LeaderboardViewModel @Inject constructor(
         )
     }
 
+    /** Agregação por doçaria (ignora vazios), ordenada por média/contagem/nome. */
     private fun aggregatePastries(reviews: List<ReviewEntity>): List<PastryRow> {
         val byPastry = reviews.groupBy { it.pastryName.trim() }
         val rows = byPastry.mapNotNull { (pastry, list) ->
@@ -138,6 +156,7 @@ class LeaderboardViewModel @Inject constructor(
         )
     }
 
+    /** Enriquecimento com dados de Places persistidos/API. */
     private suspend fun enrichRowsWithPlaces(rows: List<PlaceRow>): List<PlaceRow> {
         if (rows.isEmpty()) return rows
         val ids = rows.map { it.placeId }.distinct()

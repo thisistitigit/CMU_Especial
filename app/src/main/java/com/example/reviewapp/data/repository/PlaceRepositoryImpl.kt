@@ -16,11 +16,26 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
-
 import kotlin.math.cos
 import javax.inject.Named
-import kotlin.text.get
 
+/**
+ * Implementação de [PlaceRepository] com **Room + Google Places API**.
+ *
+ * Estratégia:
+ * - tenta primeiro **cache** (bounding box);
+ * - _fallback_ para chamadas remotas (Nearby + Details);
+ * - guarda em cache com `lastFetchedAt` para invalidação futura.
+ *
+ * **Concorrência/quotas:** o enriquecimento usa `Semaphore(4)` para limitar
+ * a taxa de _details_ em paralelo.
+ *
+ * @param placeDao DAO Room de locais.
+ * @param api cliente Retrofit para Google Places.
+ * @param googleApiKey chave de API.
+ * @param firestore opcional, para integrações futuras (não essencial aqui).
+ * @since 1.0
+ */
 class PlaceRepositoryImpl(
     private val placeDao: PlaceDao,
     private val api: GooglePlacesApi,
@@ -34,9 +49,11 @@ class PlaceRepositoryImpl(
     private fun isLikelyGooglePlaceId(id: String): Boolean =
         !id.contains(",") && !id.contains(":")
 
+    /** Heurística: precisa de *details* se faltar telefone ou `user_ratings_total == 0`. */
     private fun needsDetails(p: Place): Boolean =
         p.phone.isNullOrBlank() || p.ratingsCount == 0
 
+    /** Merge conservador: privilegia campos válidos e não vazios. */
     private fun merge(base: Place, details: Place): Place =
         base.copy(
             name = if (base.name.isBlank()) details.name else base.name,
@@ -49,22 +66,29 @@ class PlaceRepositoryImpl(
             category = base.category ?: details.category
         )
 
+    /**
+     * Busca locais numa área aproximada usando uma **bounding box** derivada do raio.
+     * Tenta cache primeiro; se vazia, chama **Nearby Search** por cada tipo.
+     */
     private suspend fun fetchAround(
         lat: Double,
         lng: Double,
         radiusMeters: Int,
         types: Set<PlaceType>
     ): List<Place> {
+        // Conversões aproximadas graus/metros
         val dLat = radiusMeters / 111_320.0
         val dLng = radiusMeters / (111_320.0 * cos(Math.toRadians(lat)))
         val minLat = lat - dLat; val maxLat = lat + dLat
         val minLng = lng - dLng; val maxLng = lng + dLng
 
+        // 1) Cache
         val cached = placeDao.listInBounds(minLat, maxLat, minLng, maxLng).map { it.toModel() }
         if (cached.isNotEmpty()) {
             return cached.sortedByDescending { it.avgRating }
         }
 
+        // 2) Remoto: Nearby por type (merge sem duplicados)
         return runCatching {
             val loc = "$lat,$lng"
             val merged = LinkedHashMap<String, Place>()
@@ -88,6 +112,7 @@ class PlaceRepositoryImpl(
         }.getOrElse { emptyList() }
     }
 
+    /** Busca **Place Details**, cacheia e devolve o modelo ou `null` em falha. */
     private suspend fun fetchDetailsAndCache(placeId: String): Place? =
         runCatching {
             val resp = api.details(
@@ -121,8 +146,10 @@ class PlaceRepositoryImpl(
     override suspend fun enrichIds(placeIds: Collection<String>): Map<String, Place> {
         if (placeIds.isEmpty()) return emptyMap()
 
+        // 1) Cache local
         val locals = placeIds.mapNotNull { id -> placeDao.get(id)?.toModel()?.let { id to it } }.toMap()
 
+        // 2) Quais precisam de details?
         val toFetch = placeIds.filter { id ->
             val local = locals[id]
             (local == null || needsDetails(local)) && isLikelyGooglePlaceId(id)
@@ -130,8 +157,8 @@ class PlaceRepositoryImpl(
 
         if (toFetch.isEmpty()) return locals
 
+        // 3) Details em paralelo (limite 4)
         val sem = Semaphore(4)
-
         val fetched: Map<String, Place> = coroutineScope {
             toFetch.map { id ->
                 async {
@@ -143,6 +170,7 @@ class PlaceRepositoryImpl(
             }.awaitAll().filterNotNull().toMap()
         }
 
+        // 4) Resolve melhor versão por ID
         val result = LinkedHashMap<String, Place>()
         for (id in placeIds) {
             val base = locals[id]
@@ -163,7 +191,4 @@ class PlaceRepositoryImpl(
         val map = enrichIds(list.map { it.id })
         return list.map { base -> map[base.id]?.let { merge(base, it) } ?: base }
     }
-
 }
-
-

@@ -11,9 +11,14 @@ import kotlinx.coroutines.tasks.await
 
 private const val TAG = "ReviewRepo"
 
-fun FirebaseFirestore.reviewsCollection() =
-    collection("reviews")
+/** Atalho para a coleção de reviews (`/reviews`). */
+fun FirebaseFirestore.reviewsCollection() = collection("reviews")
 
+/**
+ * Constrói uma query por campo com ordenação por `createdAt DESC` e `limit`.
+ *
+ * **Nota:** pode exigir **índice composto** em Firestore (campo + orderBy).
+ */
 fun FirebaseFirestore.queryByField(
     field: String,
     value: Any,
@@ -23,6 +28,7 @@ fun FirebaseFirestore.queryByField(
     .orderBy("createdAt", Query.Direction.DESCENDING)
     .limit(limit)
 
+/** Mapeia um `QuerySnapshot` para uma `List<Review>` defensiva. */
 fun QuerySnapshot.toReviews(): List<Review> =
     documents.mapNotNull { d ->
         d.toObject(ReviewRemoteDto::class.java)?.let { dto ->
@@ -43,6 +49,10 @@ fun QuerySnapshot.toReviews(): List<Review> =
         }
     }
 
+/**
+ * `GET` por campo (ex.: `"placeId"`, `"userId"`), com logging de erros e
+ * aviso de índices compostos em falta.
+ */
 suspend fun FirebaseFirestore.fetchByField(
     field: String,
     value: Any
@@ -57,7 +67,13 @@ suspend fun FirebaseFirestore.fetchByField(
     Log.e(TAG, "Firestore error ao ler $field=$value", e)
 }.getOrDefault(emptyList())
 
-/** Paginador simples, genérico para reviews ordenadas por createdAt DESC. */
+/**
+ * Paginador simples por `createdAt DESC`.
+ *
+ * @param pageSize tamanho da página (batch).
+ * @param maxToFetch limite superior absoluto para evitar custos elevados.
+ * @return lista acumulada até `maxToFetch` ou fim de dados.
+ */
 suspend fun FirebaseFirestore.fetchPaged(
     pageSize: Int,
     maxToFetch: Int

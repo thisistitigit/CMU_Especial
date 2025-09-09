@@ -27,6 +27,29 @@ import com.example.reviewapp.ui.components.applyReviewFilters
 import com.example.reviewapp.viewmodels.AuthViewModel
 import com.example.reviewapp.viewmodels.DetailsViewModel
 
+/**
+ * Ecrã de **detalhe de estabelecimento**, incluindo:
+ * - Metadados (categoria, morada, contacto, coordenadas),
+ * - Métricas Google (rating/contagem),
+ * - Métricas internas (média/contagem calculadas a partir das reviews locais),
+ * - Top 10 reviews (após filtros) e *call-to-action* para criar review.
+ *
+ * ### Notas de UX/A11Y
+ * - `ExtendedFloatingActionButton` fornece affordance clara para adicionar review.
+ * - Ícones têm `contentDescription` quando relevante para *screen readers*.
+ *
+ * ### Fluxo de dados
+ * - `DetailsViewModel.load(placeId)` combina Room + streams Firestore.
+ * - Filtros reativos via `ReviewFiltersMinimal`.
+ *
+ * @param placeId ID do local.
+ * @param vm ViewModel do detalhe.
+ * @param authVm ViewModel para UID atual (filtros “só as minhas”).
+ * @param onBack Navegar atrás.
+ * @param onReview Ação para abrir o formulário de review; recebe `placeId` e a lat/lng do local.
+ * @param onOpenReviewDetails Abrir detalhe de uma review individual.
+ * @param onOpenAllReviews Abrir ecrã com a lista completa de reviews do local.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
@@ -99,7 +122,7 @@ fun DetailsScreen(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        /* ===== HERO / INFO ===== */
+                        // HERO / INFO
                         item {
                             ElevatedCard(
                                 shape = RoundedCornerShape(20.dp),
@@ -180,7 +203,7 @@ fun DetailsScreen(
                             }
                         }
 
-                        /* ===== RATINGS ===== */
+                        // RATINGS
                         item {
                             ElevatedCard(
                                 shape = RoundedCornerShape(20.dp),
@@ -241,7 +264,7 @@ fun DetailsScreen(
                             }
                         }
 
-                        /* ===== REVIEWS: header ===== */
+                        // Header Reviews
                         item {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -260,7 +283,7 @@ fun DetailsScreen(
                             }
                         }
 
-                        /* ===== REVIEWS: filtros + contagem ===== */
+                        // Filtros + Contagem
                         item {
                             ReviewFiltersMinimal(
                                 state = filters,
@@ -275,8 +298,7 @@ fun DetailsScreen(
                             )
                         }
 
-
-                        /* ===== REVIEWS: lista (Top 10 após filtros) ===== */
+                        // Lista de Reviews
                         if (filteredAll.isEmpty()) {
                             item {
                                 Text(

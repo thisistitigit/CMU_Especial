@@ -9,6 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+/**
+ * Seletor interativo de 1..5 estrelas com caracteres `"★/☆"`.
+ *
+ * @param selected valor atual.
+ * @param onChange callback com o novo valor (1..5).
+ */
 @Composable
 fun StarSelector(
     selected: Int,

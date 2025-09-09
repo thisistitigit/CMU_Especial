@@ -39,7 +39,39 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
-
+    /**
+     *
+     * **Ecrã de Nova Review.**
+     *
+     * Formulário para submeter uma avaliação com foto opcional, respeitando as regras:
+     * Distância máxima ao local (ReviewRules.MIN_DISTANCE_METERS).
+     * Intervalo mínimo entre reviews (ReviewRules.MIN_INTERVAL_MINUTES).
+     *
+     * Fluxo e lógica:
+     * Inicializa utilizador/username e placeId (Firestore).
+     * Tenta obter localização (permissões + providers ativos); calcula distância ao local.
+     * Fotografia: tirar com Câmara (cria MediaStore URI) ou escolher da galeria.
+     * Submissão: constrói Review e chama reviewRepo.addReview(...).
+     * Observa vm.events e fecha com onDone() após submeter.
+     *
+     * UX/Validações:
+     * Botão “Submeter” apenas ativo quando campos obrigatórios preenchidos
+     * e regras de distância/tempo satisfeitas (state.rulesOk).
+     *
+     * Mensagens contextuais (ruleMessage) traduzidas por stringResource.
+     *
+     * Permissões:
+     * Câmara e Localização com runtime permissions. Abre Settings quando necessário.
+     *
+     * @param placeId ID do local a avaliar.
+     * @param navPlaceLat latitude opcional (pré-carregada via navegação).
+     * @param navPlaceLng longitude opcional (pré-carregada via navegação).
+     * @param vm ReviewFormViewModel (Hilt).
+     * @param authVm AuthViewModel (Hilt) para obter uid e dados de perfil.
+     * @param onDone callback após submissão com sucesso (fechar ecrã).
+     * @param onCancel callback para sair sem submeter.
+     *
+     */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReviewFormScreen(

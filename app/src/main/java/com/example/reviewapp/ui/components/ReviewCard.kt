@@ -24,6 +24,20 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.reviewapp.data.models.Review
 
+
+/**
+ * Cartão de **review** com avatar, estrela(s), data e foto opcional.
+ *
+ * Layout:
+ * - Avatar circular com iniciais do autor;
+ * - Cabeçalho (autor + doçaria + data);
+ * - Foto (local/cloud) se existir;
+ * - Linha de rating `"★ X / 5"`;
+ * - Comentário truncado (máx 6 linhas).
+ *
+ * @param review modelo a apresentar.
+ * @param onClick callback opcional ao tocar no cartão.
+ */
 @Composable
 fun ReviewCard(
     review: Review,
@@ -105,18 +119,10 @@ fun ReviewCard(
                 )
             }
 
-
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Filled.Star,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
+                Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(6.dp))
-                Text(
-                    text = "${review.stars} / 5",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = "${review.stars} / 5", style = MaterialTheme.typography.bodyMedium)
             }
 
             if (review.comment.isNotBlank()) {
@@ -132,13 +138,12 @@ fun ReviewCard(
     }
 }
 
-/* --------- helpers --------- */
-
+/** Iniciais para avatar a partir do nome. */
 private fun initialsFromName(name: String): String {
     val parts = name.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
     return when {
-        parts.isEmpty()      -> "?"
-        parts.size == 1      -> parts.first().take(2)
-        else                 -> (parts.first().first().toString() + parts.last().first()).uppercase()
+        parts.isEmpty() -> "?"
+        parts.size == 1 -> parts.first().take(2)
+        else -> (parts.first().first().toString() + parts.last().first()).uppercase()
     }
 }

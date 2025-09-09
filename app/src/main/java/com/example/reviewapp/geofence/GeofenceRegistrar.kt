@@ -13,16 +13,35 @@ import com.example.reviewapp.data.repository.PlaceRepository
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
 
+/**
+ * Serviço responsável por registar e renovar **geofences** com base na posição
+ * atual e no conjunto de locais de interesse.
+ *
+ * Política:
+ * - desregista geofences anteriores (idempotência);
+ * - pesquisa locais próximos (400m; `PlaceType.RESTAURANT`);
+ * - regista até 10 geofences com raio 50m e `ENTER|DWELL`.
+ *
+ * Requer `ACCESS_BACKGROUND_LOCATION` (verificado antes de registar).
+ *
+ * @since 1.0
+ */
 @Singleton
 class GeofenceRegistrar @Inject constructor(
     private val repo: PlaceRepository
 ) {
+    /** PendingIntent para o [GeofenceReceiver]. */
     private fun pendingIntent(ctx: Context): PendingIntent {
         val intent = Intent(ctx, GeofenceReceiver::class.java)
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         return PendingIntent.getBroadcast(ctx, 0, intent, flags)
     }
 
+    /**
+     * Recalcula o conjunto de geofences relevantes para a área atual.
+     *
+     * @param searchRadiusMeters raio de procura para locais (default 400m).
+     */
     suspend fun refreshGeofences(
         ctx: Context,
         lat: Double,
@@ -36,14 +55,17 @@ class GeofenceRegistrar @Inject constructor(
 
         val client = LocationServices.getGeofencingClient(ctx)
 
+        // Remove anteriores (idempotência / limpeza)
         runCatching { client.removeGeofences(pendingIntent(ctx)).await() }
 
+        // Seleciona locais relevantes
         val places = repo.nearby(
             lat, lng, searchRadiusMeters, setOf(PlaceType.RESTAURANT)
         ).take(10).filter { it.lat != 0.0 || it.lng != 0.0 }
 
         if (places.isEmpty()) return
 
+        // Constrói geofences
         val geofences = places.map {
             Geofence.Builder()
                 .setRequestId(it.id)
@@ -52,7 +74,7 @@ class GeofenceRegistrar @Inject constructor(
                 .setTransitionTypes(
                     Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_DWELL
                 )
-                .setLoiteringDelay(2 * 60 * 1000)
+                .setLoiteringDelay(2 * 60 * 1000) // 2 min
                 .build()
         }
 
@@ -79,6 +101,11 @@ class GeofenceRegistrar @Inject constructor(
             }
     }
 
+    /**
+     * Garante que as definições de localização cumprem os requisitos mínimos.
+     *
+     * @return `true` se settings OK; `false` caso requeira resolução ou falhe.
+     */
     private suspend fun ensureLocationSettings(ctx: Context): Boolean {
         val req = LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 10_000).build()
         val settingsReq = LocationSettingsRequest.Builder().addLocationRequest(req).build()

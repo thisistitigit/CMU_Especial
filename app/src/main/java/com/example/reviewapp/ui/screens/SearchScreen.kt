@@ -40,6 +40,35 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
+/**
+ *
+ * **Ecrã de Pesquisa** com mapa Google Maps + lista.
+ *
+ * Permite pesquisar por localidade (geocoding), ajustar raio, ordenar resultados e
+ * refrescar “perto de mim”. Mostra marcadores no mapa e lista ordenada com CTA para detalhes.
+ *
+ * ### Estrutura:
+ *  - AppBar com ações: procurar (campo expandível), filtro de raio, atalho para Perfil.
+ *  - OfflineBanner para conectividade.
+ *  - Google Map (Compose) com câmara controlada por SearchViewModel.state.cameraLatLng.
+ *  - Botão flutuante “Minha localização”.
+ *  - Lista dos locais ordenada por PlaceSort.
+ *
+ * ### Interações:
+ *  - Campo de pesquisa: geocoding (thread IO) e vm.refreshAt(LatLng, radius).
+ *  - Botão de raio: vm.setRadiusMeters(...) refiltra/recupera conforme necessário.
+ *  - FAB: vm.refreshNearMe() (requer permissão de localização).
+ *  - Marcador/list item: onOpenDetails(placeId).
+ *
+ * ### Acessibilidade/Desempenho:
+ *  -Uso de snapshotFlow para detetar fim de movimento da câmara e sugerir “Pesquisar aqui”.
+ *  -Evita jank com remember/LaunchedEffect e tarefas IO encapsuladas.
+ *
+ * @param vm SearchViewModel (Hilt).
+ * @param onOpenDetails callback para abrir detalhes do local.
+ * @param onOpenProfile callback para navegar para o perfil do utilizador.
+ * **/
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(

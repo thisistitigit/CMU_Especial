@@ -3,17 +3,24 @@ package com.example.reviewapp.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.reviewapp.viewmodels.LeaderboardViewModel
-import kotlin.math.round
 
+/**
+ * Secção horizontal reutilizável para **leaderboards** de locais.
+ *
+ * Mostra um título e uma `LazyRow` de cartões compactos com nome, morada e
+ * resumo de rating (média/contagem).
+ *
+ * @param title cabeçalho da secção (ex.: "Mais bem avaliados").
+ * @param rows linhas pré-formatadas pelo [LeaderboardViewModel].
+ * @param onPlaceClick callback ao tocar num cartão (recebe `placeId`).
+ * @param modifier modificador externo (margens, largura, etc.).
+ */
 @Composable
 fun LeaderboardHorizontalSection(
     title: String,
@@ -41,6 +48,12 @@ fun LeaderboardHorizontalSection(
     }
 }
 
+/**
+ * Cartão compacto de leaderboard.
+ *
+ * @param row dados agregados do local (nome, morada, média/contagem).
+ * @param onClick ação ao selecionar o cartão.
+ */
 @Composable
 private fun LeaderboardPlaceCard(
     row: LeaderboardViewModel.PlaceRow,

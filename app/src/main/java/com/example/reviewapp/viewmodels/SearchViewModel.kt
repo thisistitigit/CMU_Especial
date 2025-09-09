@@ -3,7 +3,6 @@ package com.example.reviewapp.viewmodels
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,20 +15,22 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlin.math.*
 
+/**
+ * **VM** de pesquisa/descoberta de locais (mapa + lista).
+ *
+ * Fluxos:
+ * - *Preload* tenta obter localização atual (se permitido) e pesquisa `nearby`;
+ * - Mantém duas listas: resultados **no centro de pesquisa** e **perto de mim**;
+ * - Aplica **filtro por raio local** em memória (Haversine) e ordena por rating;
+ * - Enriquecimento assíncrono com detalhes (nome/telefone/rating) via `enrichPlaces`.
+ */
 @HiltViewModel
 class SearchViewModel @Inject constructor(
     private val placeRepo: PlaceRepository,
@@ -37,6 +38,7 @@ class SearchViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
+    /** Estado observável do ecrã de pesquisa. */
     data class UiState(
         val cameraLatLng: LatLng = LatLng(38.7223, -9.1393),
         val searchCenter: LatLng = LatLng(38.7223, -9.1393),
@@ -55,6 +57,7 @@ class SearchViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState(isLoading = true))
     val state: StateFlow<UiState> = _state
 
+    /** Cache bruta para re-aplicar filtros locais sem re-fetch. */
     private var rawSearchPlaces: List<Place> = emptyList()
     private var rawNearMePlaces: List<Place> = emptyList()
 
@@ -62,6 +65,7 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch { preload() }
     }
 
+    /** Distância Haversine (m). */
     private fun haversineMeters(a: LatLng, b: LatLng): Double {
         val R = 6371000.0
         val dLat = Math.toRadians(b.latitude - a.latitude)
@@ -72,12 +76,14 @@ class SearchViewModel @Inject constructor(
         return 2 * R * asin(min(1.0, sqrt(h)))
     }
 
+    /** Filtro local por raio + ordenação por rating (desc). */
     private fun applyLocalRadiusFilter(center: LatLng, radius: Int, list: List<Place>): List<Place> {
         return list.filter { p ->
             haversineMeters(center, LatLng(p.lat, p.lng)) <= radius
         }.sortedByDescending { it.avgRating }
     }
 
+    /** Fetch principal para o centro de pesquisa, com *fallback* de raio. */
     private suspend fun doFetchSearch(center: LatLng, radiusMeters: Int) {
         _state.update { it.copy(isLoading = true, error = null) }
 
@@ -100,6 +106,7 @@ class SearchViewModel @Inject constructor(
             )
         }
 
+        // Enriquecimento assíncrono (detalhes/telefone/ratingCount)
         viewModelScope.launch {
             val enriched = runCatching { placeRepo.enrichPlaces(rawSearchPlaces) }.getOrNull() ?: return@launch
             if (enriched !== rawSearchPlaces) {
@@ -110,6 +117,8 @@ class SearchViewModel @Inject constructor(
             }
         }
     }
+
+    /** Fetch para "Perto de mim" (idêntico ao de pesquisa). */
     private suspend fun doFetchNearMe(center: LatLng, radiusMeters: Int) {
         suspend fun fetch(r: Int) =
             runCatching { placeRepo.nearby(center.latitude, center.longitude, r) }
@@ -139,11 +148,13 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-
+    /**
+     * Pré-carregamento inicial: tenta usar localização real se permitido.
+     * Em falta, usa o centro por omissão (Lisboa) para ambos os *feeds*.
+     */
     private suspend fun preload() {
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
-
         val defaultCenter = _state.value.cameraLatLng
 
         if (fineGranted || coarseGranted) {
@@ -158,6 +169,7 @@ class SearchViewModel @Inject constructor(
                     return
                 }
             } catch (_: Throwable) {
+                // Silenciar falhas de localização no arranque
             }
         }
 
@@ -165,7 +177,10 @@ class SearchViewModel @Inject constructor(
         doFetchSearch(defaultCenter, _state.value.radiusMeters)
     }
 
-
+    /**
+     * Atualiza o raio de pesquisa e decide se é necessário novo fetch
+     * (quando o novo raio excede o `fetchedRadiusMeters`).
+     */
     fun setRadiusMeters(newRadius: Int) = viewModelScope.launch {
         val st = _state.value
         _state.update { it.copy(radiusMeters = newRadius) }
@@ -190,6 +205,7 @@ class SearchViewModel @Inject constructor(
         }
     }
 
+    /** Recalcula "Perto de mim" com localização atual (se permitido). */
     fun refreshNearMe(radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
         val fineGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
         val coarseGranted = ContextCompat.checkSelfPermission(appContext, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -202,6 +218,7 @@ class SearchViewModel @Inject constructor(
         doFetchNearMe(LatLng(best.latitude, best.longitude), radiusMeters)
     }
 
+    /** Recarrega resultados para um novo centro de pesquisa. */
     fun refreshAt(center: LatLng, radiusMeters: Int = _state.value.radiusMeters) = viewModelScope.launch {
         doFetchSearch(center, radiusMeters)
     }

@@ -3,6 +3,7 @@ package com.example.reviewapp.network.mappers
 import com.example.reviewapp.data.locals.ReviewEntity
 import com.example.reviewapp.data.models.Review
 
+/** Converte [Review] (domínio) para `ReviewEntity` (Room). */
 fun Review.toEntity() = ReviewEntity(
    id = id,
    placeId = placeId,
@@ -18,6 +19,7 @@ fun Review.toEntity() = ReviewEntity(
    createdAt = createdAt
 )
 
+/** Converte `ReviewEntity` (Room) para [Review] (domínio). */
 fun ReviewEntity.toModel() = Review(
    id = id,
    placeId = placeId,

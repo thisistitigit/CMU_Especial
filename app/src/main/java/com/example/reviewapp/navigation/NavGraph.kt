@@ -1,8 +1,6 @@
 package com.example.reviewapp.navigation
 
-
 import android.net.Uri
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -14,8 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavGraph
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,8 +26,15 @@ import com.example.reviewapp.ui.components.BottomBar
 import com.example.reviewapp.ui.screens.*
 import com.example.reviewapp.viewmodels.AuthViewModel
 import com.example.reviewapp.viewmodels.SearchViewModel
-import androidx.compose.ui.res.stringResource
 
+/**
+ * Definição das rotas da app (Compose Navigation) e do grafo principal.
+ *
+ * Sealed class [Route] centraliza os paths e `builders` de argumentos.
+ * O `Scaffold` ativa a `BottomBar` nas rotas principais.
+ *
+ * @since 1.0
+ */
 sealed class Route(val route: String) {
     data object AuthGate   : Route("authGate")
     data object Login      : Route("login")
@@ -42,9 +47,13 @@ sealed class Route(val route: String) {
     data object History    : Route("history")
     data object Profile    : Route("profile")
 
+    /** Ecrã de detalhes de um local. */
     data object Details : Route("details/{placeId}") {
+        /** Constrói a rota com `placeId` devidamente `Uri.encode`. */
         fun build(id: String) = "details/${Uri.encode(id)}"
     }
+
+    /** Formulário de review; aceita `lat`/`lng` opcionais como hints. */
     data object ReviewForm : Route("review/{placeId}?lat={lat}&lng={lng}") {
         fun build(id: String) = "review/${Uri.encode(id)}"
         fun build(id: String, lat: Double?, lng: Double?): String {
@@ -52,11 +61,19 @@ sealed class Route(val route: String) {
             return if (lat != null && lng != null) "$base?lat=$lat&lng=$lng" else base
         }
     }
-    data object ReviewDetails : Route("reviewDetails/{reviewId}") { fun build(id: String) = "reviewDetails/$id" }
-    data object ReviewsAll : Route("reviewsAll/{placeId}") { fun build(id: String) = "reviewsAll/$id" }
 
+    /** Ecrã de detalhes de uma review. */
+    data object ReviewDetails : Route("reviewDetails/{reviewId}") {
+        fun build(id: String) = "reviewDetails/$id"
+    }
+
+    /** Lista de todas as reviews de um local. */
+    data object ReviewsAll : Route("reviewsAll/{placeId}") {
+        fun build(id: String) = "reviewsAll/$id"
+    }
 }
 
+/** Conjunto de rotas que exibem a `BottomBar`. */
 private val bottomRoutes = setOf(
     Route.Home.route,
     Route.Search.route,
@@ -65,6 +82,12 @@ private val bottomRoutes = setOf(
     Route.Profile.route
 )
 
+/**
+ * Grafo de navegação principal da aplicação.
+ *
+ * Gere **AuthGate → (Login|Main)**, e o subgrafo `Main` com as rotas
+ * `Home/Search/Leaderboard/History/Profile` e ecrãs auxiliares.
+ */
 @Composable
 fun AppNavGraph(nav: NavHostController) {
     val backStackEntry by nav.currentBackStackEntryAsState()
@@ -89,9 +112,7 @@ fun AppNavGraph(nav: NavHostController) {
                         launchSingleTop = true
                     }
                 }
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.authgate_preparing))
-                }
+                PlaceholderScreen(stringResource(R.string.authgate_preparing))
             }
 
             composable(Route.Login.route) {
@@ -222,6 +243,7 @@ fun AppNavGraph(nav: NavHostController) {
     }
 }
 
+/** Placeholder minimalista para ecrãs em construção. */
 @Composable
 private fun PlaceholderScreen(text: String) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

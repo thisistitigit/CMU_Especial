@@ -3,29 +3,50 @@ package com.example.reviewapp.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavHostController
-import com.example.reviewapp.R
-import com.example.reviewapp.ui.theme.AppTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavHostController
+import com.example.reviewapp.R
+import com.example.reviewapp.ui.theme.AppTheme
 
+/**
+ * Modelo de item da **Bottom Navigation**.
+ *
+ * @property route rota de navegação (deve existir no grafo).
+ * @property label rótulo legível apresentado sob o ícone.
+ * @property icon ícone representativo do destino.
+ */
 data class BottomItem(val route: String, val label: String, val icon: ImageVector)
 
+/**
+ * Barra de navegação inferior com realce do item ativo.
+ *
+ * Comportamento:
+ * - Usa navegação com `launchSingleTop` e `restoreState` para preservar estado
+ *   de ecrãs ao alternar separadores.
+ * - Realce visual do item selecionado com *chip* circular e sombra suave.
+ *
+ * Acessibilidade:
+ * - Cada item possui `contentDescription` baseado no `label`.
+ *
+ * @param nav controlador de navegação.
+ * @param currentDest destino atual (obtido via `currentBackStackEntryAsState`).
+ */
 @Composable
 fun BottomBar(nav: NavHostController, currentDest: NavDestination?) {
     val items = listOf(

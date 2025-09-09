@@ -14,11 +14,22 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * **VM** do formulário de submissão de reviews.
+ *
+ * Aplica regras anti-abuso ([ReviewRules]):
+ * - distância ≤ `MIN_DISTANCE_METERS`;
+ * - intervalo desde a última review ≥ `MIN_INTERVAL_MINUTES`.
+ *
+ * Gere permissões/estado de localização (sinalizados pela UI) e *validates*
+ * campos obrigatórios (`pastryName`, `stars ∈ [1..5]`, `comment`).
+ */
 @HiltViewModel
 class ReviewFormViewModel @Inject constructor(
     private val reviewRepo: ReviewRepository
 ) : ViewModel() {
 
+    /** Estado do formulário e do *gate* de regras/UX. */
     data class UiState(
         val placeId: String = "",
         val userId: String = "",
@@ -46,13 +57,18 @@ class ReviewFormViewModel @Inject constructor(
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
+    /** Inicializa identificadores do contexto da review. */
     fun init(placeId: String, userId: String, userName: String) {
         _state.update { it.copy(placeId = placeId, userId = userId, userName = userName) }
         recompute()
     }
+
+    /** Eventos one-shot da UI (ex.: navegação após sucesso). */
     sealed interface Event { data object Submitted : Event }
     private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 1)
     val events = _events.asSharedFlow()
+
+    // Setters reativos de campos
     fun onPastryChanged(value: String) { _state.update { it.copy(pastryName = value) }; recompute() }
     fun onStarsChanged(value: Int) { _state.update { it.copy(stars = value.coerceIn(0, 5)) }; recompute() }
     fun onCommentChanged(value: String) { _state.update { it.copy(comment = value) }; recompute() }
@@ -60,6 +76,9 @@ class ReviewFormViewModel @Inject constructor(
     fun setUserLocation(lat: Double?, lng: Double?) { _state.update { it.copy(userLat = lat, userLng = lng) }; recompute() }
     fun setDistanceMeters(value: Double?) { _state.update { it.copy(distanceMeters = value) }; recompute() }
 
+    /**
+     * Pré-carrega a última review do utilizador para validar `too_soon`.
+     */
     fun warmupRules(distanceMeters: Double?) = viewModelScope.launch {
         val uid = _state.value.userId
         val last = if (uid.isNotBlank()) reviewRepo.lastReviewAtByUser(uid) else null
@@ -72,7 +91,11 @@ class ReviewFormViewModel @Inject constructor(
     fun setLocationPermission(has: Boolean) { _state.update { it.copy(hasLocationPermission = has) }; recompute() }
     fun setLocationEnabled(enabled: Boolean) { _state.update { it.copy(isLocationEnabled = enabled) }; recompute() }
 
-
+    /**
+     * Submete a review se regras e campos obrigatórios estiverem OK.
+     *
+     * @return `true` em sucesso; em falha, popula `ruleMessage` com chave de i18n.
+     */
     suspend fun submit(): Boolean {
         val s = _state.value
         val uid = s.userId
@@ -102,9 +125,7 @@ class ReviewFormViewModel @Inject constructor(
 
         return try {
             reviewRepo.addReview(review, userLat = lat, userLng = lng, now = now)
-
             _events.tryEmit(Event.Submitted)
-
             _state.update {
                 it.copy(
                     pastryName = "", stars = 0, comment = "",
@@ -124,6 +145,8 @@ class ReviewFormViewModel @Inject constructor(
             false
         }
     }
+
+    /** Recalcula `rulesOk`, `canSubmit` e `ruleMessage` para a UI. */
     private fun recompute() {
         val s = _state.value
         val now = System.currentTimeMillis()

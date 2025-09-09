@@ -4,6 +4,27 @@ plugins {
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.google.gms)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.dokka)
+}
+tasks.dokkaHtml.configure {
+    // Onde o HTML é gerado dentro de app/
+    outputDirectory.set(layout.buildDirectory.dir("dokka/html"))
+
+    dokkaSourceSets.configureEach {
+        moduleName.set("ReviewApp")
+        includes.from("RELATORIO.md")
+
+        // Preferências úteis
+        jdkVersion.set(17)
+        skipDeprecated.set(false)
+        reportUndocumented.set(false)
+
+        // (Opcional) esconder pacotes internos da doc
+        perPackageOption {
+            matchingRegex.set("com\\.example\\.reviewapp\\.di(.*)")
+            suppress.set(true)
+        }
+    }
 }
 
 

@@ -5,5 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.kapt) apply false
     alias(libs.plugins.google.gms) apply false
     alias(libs.plugins.hilt.android) apply false
+    alias(libs.plugins.dokka) apply false
 }
 

@@ -86,21 +86,26 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            AppHeader(
-                title = stringResource(R.string.profile_title),
-                actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.Logout,
-                            contentDescription = stringResource(R.string.action_logout),
-                            tint = AppTheme.colors.logout
-                        )
-                }
-                }
-            )
-        }
+        Scaffold(
+            topBar = {
+                AppHeader(
+                    title = stringResource(R.string.profile_title),
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                authViewModel.signOut() // termina a sessão no Firebase
+                                onLogout()              // callback para navegar/logicar após logout
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.Logout,
+                                contentDescription = stringResource(R.string.action_logout),
+                                tint = AppTheme.colors.logout
+                            )
+                        }
+                    }
+                )
+            }
     ) { padding ->
         Column(
             modifier = Modifier

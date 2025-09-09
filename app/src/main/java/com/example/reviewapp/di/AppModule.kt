@@ -2,7 +2,7 @@ package com.example.reviewapp.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.reviewapp.R
+import com.example.reviewapp.BuildConfig
 import com.example.reviewapp.data.AppDatabase
 import com.example.reviewapp.data.MIGRATION_1_2
 import com.example.reviewapp.data.dao.PlaceDao
@@ -49,8 +49,7 @@ object AppModule {
     /** Lê a chave da Google Places API de `strings.xml`. */
     @Provides @Singleton
     @Named("GOOGLE_PLACES_KEY")
-    fun provideGooglePlacesKey(@ApplicationContext ctx: Context): String =
-        ctx.getString(R.string.google_places_key)
+    fun provideGooglePlacesKey(): String = BuildConfig.PLACES_API_KEY
 
     /** Repositório de locais. */
     @Provides @Singleton

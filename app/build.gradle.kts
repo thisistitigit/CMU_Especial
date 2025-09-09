@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.google.gms)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.dokka)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 tasks.dokkaHtml.configure {
     // Onde o HTML é gerado dentro de app/
@@ -45,6 +46,27 @@ android {
                 arguments += mapOf("room.schemaLocation" to "$projectDir/schemas".toString())
             }
         }
+
+        manifestPlaceholders += mapOf(
+            "MAPS_API_KEY" to (project.findProperty("MAPS_API_KEY") ?: "")
+        )
+        // >>> Estes três geram MESMO campos no BuildConfig <<<
+        buildConfigField(
+            "String",
+            "PLACES_API_KEY",
+            "\"${providers.gradleProperty("PLACES_API_KEY").getOrElse("")}\""
+        )
+        buildConfigField(
+            "String",
+            "GEOAPIFY_KEY",
+            "\"${providers.gradleProperty("GEOAPIFY_KEY").getOrElse("")}\""
+        )
+        // Opcional: também o MAPS se quiseres ler em código
+        buildConfigField(
+            "String",
+            "MAPS_API_KEY",
+            "\"${providers.gradleProperty("MAPS_API_KEY").getOrElse("")}\""
+        )
     }
 
     buildTypes {

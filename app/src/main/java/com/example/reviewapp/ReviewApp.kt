@@ -2,6 +2,7 @@ package com.example.reviewapp
 
 import android.app.Application
 import com.example.reviewapp.di.ReviewPhotoSyncWorker
+import com.google.android.libraries.places.api.Places
 import dagger.hilt.android.HiltAndroidApp
 import com.google.firebase.FirebaseApp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -28,6 +29,7 @@ class ReviewApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        Places.initialize(this, BuildConfig.PLACES_API_KEY)
 
         // 1) Firebase – obrigatório antes de qualquer uso de serviços Firebase.
         FirebaseApp.initializeApp(this)
